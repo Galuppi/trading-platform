@@ -1,0 +1,30 @@
+'''"""This module defines classes related to Engine."""'''
+import logging
+from history.base.base_downloader import Download
+logger = logging.getLogger(__name__)
+
+class Engine:
+
+    def __init__(self: Any, downloaders: list[Download]) -> Any:
+        self.downloaders = downloaders
+
+    def initialize(self: Any) -> None:
+        logger.info('Initializing downloaders...')
+        for downloader in self.downloaders:
+            try:
+                downloader.initialize()
+            except Exception as e:
+                logger.exception(f'Failed to initialize {downloader.config.name}: {e}')
+        logger.info('All downloaders initialized.')
+
+    def run(self: Any) -> None:
+        self.initialize()
+        logger.info('Starting download engine...')
+        for downloader in self.downloaders:
+            try:
+                logger.info(f'Running downloader: {downloader.config.name}')
+                downloader.run()
+                logger.info(f'Finished downloader: {downloader.config.name}')
+            except Exception as e:
+                logger.exception(f"Downloader '{downloader.config.name}' failed: {e}")
+        logger.info('All downloads complete.')

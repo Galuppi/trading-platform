@@ -1,0 +1,13 @@
+name: OhlcCsv
+enabled: false
+
+assets:
+  - symbol: EURUSD
+    timeframe: H1
+    date_from: 01-01-2023
+    date_to: 31-12-2025
+
+  - symbol: US30
+    timeframe: H1
+    date_from: 01-01-2023
+    date_to: 31-12-2025

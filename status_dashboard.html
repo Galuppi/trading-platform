@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading System Status</title>
+    <meta http-equiv="refresh" content="10">
+    <style>
+        body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#1e1e1e;color:#e0e0e0;margin:0;padding:20px;}
+        .container {max-width:1000px;margin:0 auto;}
+        h1 {color:#4CAF50;text-align:center;margin-bottom:10px;}
+        .meta {text-align:center;color:#aaa;font-size:0.9em;margin-bottom:20px;}
+        .section {
+            background:#2d2d2d;
+            margin:15px 0;
+            padding:16px;
+            border-radius:8px;
+            border-left:4px solid #4CAF50;
+            font-size:0.95em;
+        }
+        .section h3 {
+            margin:0 0 12px 0;
+            color:#4CAF50;
+            font-size:1.1em;
+        }
+        .item {margin:6px 0;}
+        .label {color:#4CAF50;font-weight:bold;}
+        .profit-neg {color:#f44336;}
+        .profit-pos {color:#4CAF50;}
+        .market-open {color:#4CAF50;}
+        .market-closed {color:#f44336;}
+        .strategy {background:#333;margin:10px 0;padding:12px;border-radius:6px;}
+        .footer {text-align:center;margin-top:30px;color:#777;font-size:0.85em;}
+        .warning {color:#ff9800;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trading System Status</h1>
+        <div class="meta">Mode: Live • 2025-11-05 • Local: 08:07 • Platform: 10:07</div>
+        <div class="section">
+            <h3>Balances</h3>
+            
+            <div class="item"><span class="label">Equity:</span> 20544.47</div>
+            <div class="item"><span class="label">Balance:</span> 19650.05</div>
+            <div class="item"><span class="label">Profit:</span> <span class='profit-pos'>+894.42</span></div>
+        </div>
+        <div class="section">
+            <h3>Strategies</h3>
+            
+        <div class="strategy">
+            <div><span class="label">Strategy:</span> Range breakout 1.0</div>
+            <div><span class="label">Assets:</span> XAUUSD, USDJPY, US30, GBPUSD, EURUSD, DE40</div>
+            <div><span class="label">Open Trades:</span> 2</div>
+            <div><span class="label">Market open:</span> <span class="market-open">Yes</span></div>
+            <div><span class="label">Holiday:</span> No</div>
+        </div>
+        <div class="strategy">
+            <div><span class="label">Strategy:</span> Crypto 1.0</div>
+            <div><span class="label">Assets:</span> BTCUSD, ETHUSD, XRPUSD</div>
+            <div><span class="label">Open Trades:</span> 0</div>
+            <div><span class="label">Market open:</span> <span class="market-open">Yes</span></div>
+            <div><span class="label">Holiday:</span> No</div>
+        </div>
+        <div class="strategy">
+            <div><span class="label">Strategy:</span> Go Long 1.0</div>
+            <div><span class="label">Assets:</span> DE40, US30, USTEC</div>
+            <div><span class="label">Open Trades:</span> 3</div>
+            <div><span class="label">Market open:</span> <span class="market-open">Yes</span></div>
+            <div><span class="label">Holiday:</span> No</div>
+        </div>
+        <div class="strategy">
+            <div><span class="label">Strategy:</span> Turnover Tuesday 1.0</div>
+            <div><span class="label">Assets:</span> DE40, US30, USTEC</div>
+            <div><span class="label">Open Trades:</span> 0</div>
+            <div><span class="label">Market open:</span> <span class="market-open">Yes</span></div>
+            <div><span class="label">Holiday:</span> No</div>
+        </div>
+        </div>
+        <div class="footer">Last updated: 2025-11-05 08:07:37</div>
+    </div>
+</body>
+</html>

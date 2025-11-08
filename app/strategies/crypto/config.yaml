@@ -1,0 +1,67 @@
+name: Crypto
+display_name: Crypto 1.0
+enabled: false
+total_strategy_capital: 100000
+positioning: risk
+holiday_calendar: us
+
+market_hours:
+  sessions:
+    Monday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Tuesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Wednesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Thursday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Friday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Saturday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Sunday:
+      open_time: "01:05"
+      close_time: "23:55"
+
+assets:
+  - symbol: BTCUSD
+    open_min: 965
+    close_min: 1255
+    range_open_min: 815
+    range_close_min: 965
+    range_stop_loss: false
+    risk_percent: 0.5
+    max_total_trades: 1
+    max_buy_trades: 1
+    max_sell_trades: 1
+    percent_of_capital: 50
+
+  - symbol: ETHUSD
+    open_min: 690
+    close_min: 1080
+    range_open_min: 200
+    range_close_min: 690
+    range_stop_loss: true
+    risk_percent: 0.5
+    max_total_trades: 1
+    max_buy_trades: 1
+    max_sell_trades: 1
+    percent_of_capital: 50
+
+  - symbol: XRPUSD
+    open_min: 690
+    close_min: 1080
+    range_open_min: 200
+    range_close_min: 690
+    range_stop_loss: true
+    risk_percent: 0.5
+    max_total_trades: 1
+    max_buy_trades: 1
+    max_sell_trades: 1
+    percent_of_capital: 50

@@ -1,0 +1,56 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Ignore virtual environments
+venv/
+.env/
+venv-dev/
+
+# VSCode settings
+.vscode/
+
+# Mac & Windows system files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Jupyter and IPython
+.ipynb_checkpoints/
+*.ipynb
+
+# dotenv
+.env
+
+# Local deployment output
+prod/
+
+# backlog
+.backlog/
+
+# Ignore large and changing data
+historical-data/
+backtest-results/
+
+#development utils
+dev-tools/
+
+#gpt notes
+gpt_notes.txt
+
+#big json
+app/runtime/state/*.json
+
+#performance
+*.prof
+
+# Keep
+.workingAPI/
