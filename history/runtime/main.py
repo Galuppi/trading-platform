@@ -1,4 +1,4 @@
-'''"""This module is part of the trading system package."""'''
+'''"""This module is part of the trading system package V1."""'''
 import logging
 from dotenv import load_dotenv
 load_dotenv()
