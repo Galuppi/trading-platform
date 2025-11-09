@@ -5,6 +5,6 @@ from history.common.models.model_downloader import DownloaderConfig
 class Download(ABC):
 
     @abstractmethod
-    def run(self: Any, config: DownloaderConfig) -> None:
+    def run(self, config: DownloaderConfig) -> None:
         """Execute the download process using the given configuration."""
         pass

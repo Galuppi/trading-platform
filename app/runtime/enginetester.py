@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class EngineTester(BaseEngine):
 
-    def __init__(self: Any, account: Any, strategies: Any, state_manager: Any, simulation_timestamps: Any, summary_writer: Any, connector_config: Any, backtester_config: Any, dashboard_manager: Any) -> Any:
+    def __init__(self, account: Any, strategies: Any, state_manager: Any, simulation_timestamps: Any, summary_writer: Any, connector_config: Any, backtester_config: Any, dashboard_manager: Any) -> Any:
         super().__init__(account, strategies, state_manager, connector_config, backtester_config, dashboard_manager)
         self.account = account
         self.simulation_timestamps = simulation_timestamps
@@ -17,10 +17,10 @@ class EngineTester(BaseEngine):
         self.connector_config = connector_config
         self.backtester_config = backtester_config
 
-    def _update_profit_if_due(self: Any, timestamp: Any, last_update_timestamp: Any) -> Any:
+    def _update_profit_if_due(self, timestamp: Any, last_update_timestamp: Any) -> Any:
         pass
 
-    def run(self: Any) -> Any:
+    def run(self) -> Any:
         if STATE_PATH.exists():
             STATE_PATH.write_text(json.dumps({}))
         if SUMMARY_PATH.exists():

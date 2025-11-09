@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Mt5testerTrade(Trade):
 
-    def __init__(self: Any, symbol: Any, calculator: Calculator, summary_writer: BacktestSummary) -> Any:
+    def __init__(self, symbol: Any, calculator: Calculator, summary_writer: BacktestSummary) -> Any:
         self.symbol = symbol
         self.calculator = calculator
         self.summary_writer = summary_writer
@@ -25,7 +25,7 @@ class Mt5testerTrade(Trade):
         if self.calculator is None:
             print('[ERROR] Calculator is None in Mt5testerTrade constructor!')
 
-    def open_position(self: Any, order: OrderRequest) -> OrderResult:
+    def open_position(self, order: OrderRequest) -> OrderResult:
         if not order.price or order.price <= 0:
             direction = order.direction.lower()
             if direction == TRADE_DIRECTION_BUY:
@@ -40,7 +40,7 @@ class Mt5testerTrade(Trade):
         self._log_order(order, trade_id)
         return order_result
 
-    def close_position(self: Any, trade: TradeRecord) -> TradeResult:
+    def close_position(self, trade: TradeRecord) -> TradeResult:
         if trade.exit_price is None:
             direction = trade.type.lower()
             price = self.symbol.get_bid_price(trade.symbol) if direction == TRADE_DIRECTION_BUY else self.symbol.get_ask_price(trade.symbol)
@@ -63,13 +63,13 @@ class Mt5testerTrade(Trade):
         self._log_close(trade)
         return TradeResult(symbol=trade.symbol, lot_size=trade.lot_size, accepted=True, ticket=trade.ticket, retcode=10009, close_price=trade.exit_price, profit=trade.profit, closed=True, comment=trade.comment)
 
-    def _open_position(self: Any, *args, **kwargs) -> Any:
+    def _open_position(self, *args, **kwargs) -> Any:
         return self.open_position(OrderRequest(**kwargs))
 
-    def _log_order(self: Any, order: OrderRequest, trade_id: str) -> Any:
+    def _log_order(self, order: OrderRequest, trade_id: str) -> Any:
         pass
 
-    def _log_close(self: Any, trade: TradeRecord) -> Any:
+    def _log_close(self, trade: TradeRecord) -> Any:
         if trade.exit_price is None:
             return
         is_new_file = not self.result_file_path.exists() and (not self._wrote_header)
@@ -80,11 +80,11 @@ class Mt5testerTrade(Trade):
                 self._wrote_header = True
             writer.writerow([PlatformTime.to_mt_time_format(trade.timestamp), trade.strategy.capitalize(), trade.type.capitalize(), trade.lot_size, trade.symbol, trade.entry_price, trade.stop_loss, trade.take_profit, PlatformTime.to_mt_time_format(trade.exit_time), trade.exit_price, trade.commission, 0.0, trade.slippage_entry, trade.profit, trade.comment])
 
-    def _calculate_profit(self: Any, trade: TradeRecord) -> ProfitResult:
+    def _calculate_profit(self, trade: TradeRecord) -> ProfitResult:
         return self.calculator.calculate_profit(trade)
 
-    def _modify_position(self: Any, ticket: str, sl: Optional[float]=None, tp: Optional[float]=None, comment: str='', symbol: Optional[str]=None, **kwargs) -> TradeResult:
+    def _modify_position(self, ticket: str, sl: Optional[float]=None, tp: Optional[float]=None, comment: str='', symbol: Optional[str]=None, **kwargs) -> TradeResult:
         raise NotImplementedError
 
-    def modify_position(self: Any, trade: TradeRecord) -> bool:
+    def modify_position(self, trade: TradeRecord) -> bool:
         return False

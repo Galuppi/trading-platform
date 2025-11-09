@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class CTraderConnector(Connector):
 
-    def __init__(self: Any, config: ConnectorConfig) -> Any:
+    def __init__(self, config: ConnectorConfig) -> Any:
         if not config.api_key or not config.account_id:
             raise ValueError("cTrader requires 'api_key' and 'account_id' in ConnectorConfig.")
         self.api_key = config.api_key
@@ -17,6 +17,6 @@ class CTraderConnector(Connector):
         self.refresh_token = config.refresh_token
         self.timezone = config.timezone
 
-    def connect(self: Any) -> bool:
+    def connect(self) -> bool:
         logger.warning('CTraderConnector.connect() is not implemented.')
         return False

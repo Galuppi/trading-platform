@@ -7,44 +7,44 @@ logger = logging.getLogger(__name__)
 
 class Mt5testerAccount(Account):
 
-    def __init__(self: Any, backtester_config: Any) -> Any:
+    def __init__(self, backtester_config: Any) -> Any:
         self.balance = float(backtester_config.backtest_deposit)
         self.equity = self.balance
         self.commission_per_lot = float(backtester_config.backtest_commission_per_lot)
         self.account_currency = backtester_config.backtest_currency
 
-    def get_balance(self: Any) -> float:
+    def get_balance(self) -> float:
         return self.balance
 
-    def get_equity(self: Any) -> float:
+    def get_equity(self) -> float:
         return self.equity
 
-    def get_commission_per_lot(self: Any) -> float:
+    def get_commission_per_lot(self) -> float:
         return self.commission_per_lot
 
-    def get_free_margin(self: Any, symbol: str) -> float:
+    def get_free_margin(self, symbol: str) -> float:
         return 0.0
 
-    def get_margin_required(self: Any, order: OrderRequest) -> float:
+    def get_margin_required(self, order: OrderRequest) -> float:
         return 0.0
 
-    def has_sufficient_margin(self: Any, order: OrderRequest) -> bool:
+    def has_sufficient_margin(self, order: OrderRequest) -> bool:
         return True
 
-    def get_account_number(self: Any) -> int:
+    def get_account_number(self) -> int:
         return 99999999
 
-    def get_account_currency(self: Any) -> str:
+    def get_account_currency(self) -> str:
         return self.account_currency
 
-    def get_open_tickets(self: Any) -> List[str]:
+    def get_open_tickets(self) -> List[str]:
         return []
 
-    def get_closed_tickets(self: Any) -> List[TradeRecord]:
+    def get_closed_tickets(self) -> List[TradeRecord]:
         return []
 
-    def get_server_offset_hours(self: Any) -> Optional[int]:
+    def get_server_offset_hours(self) -> Optional[int]:
         return 0
 
-    def get_server_tick_timestanp(self: Any) -> Optional[int]:
+    def get_server_tick_timestanp(self) -> Optional[int]:
         return None

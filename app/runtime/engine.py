@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class Engine(BaseEngine):
 
-    def run(self: Any) -> Any:
+    def run(self) -> Any:
         self.initialize()
         PlatformTime.sleep(1)
         self.dashboard_manager.print_status_report(self.strategies, self.state_manager, MODE_LIVE, log_to_terminal=True)

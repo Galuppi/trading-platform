@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 class Mt5Trade(Trade):
 
-    def open_position(self: Any, order: OrderRequest) -> OrderResult:
+    def open_position(self, order: OrderRequest) -> OrderResult:
         logger.info(f'Placing order — Symbol: {order.symbol}, Lot Size: {order.lot_size}, Direction: {order.direction}, SL: {order.stop_loss}, TP: {order.take_profit}, Comment: {order.comment}')
         return self._open_position(symbol=order.symbol, size=order.lot_size, direction=order.direction, sl=order.stop_loss, tp=order.take_profit, comment=order.comment or 'Python trading system')
 
-    def close_position(self: Any, trade: TradeRecord) -> TradeResult:
+    def close_position(self, trade: TradeRecord) -> TradeResult:
         opposite_direction = TRADE_DIRECTION_SELL if trade.type == TRADE_DIRECTION_BUY else TRADE_DIRECTION_BUY
         logger.info(f'Closing order — Symbol: {trade.symbol}, Lot Size: {trade.lot_size}, Direction: {opposite_direction}, Position: {trade.ticket}, Comment: {trade.comment}')
         result = self._open_position(symbol=trade.symbol, size=trade.lot_size, direction=opposite_direction, comment=trade.comment or 'Close position', position=trade.ticket)
@@ -28,15 +28,15 @@ class Mt5Trade(Trade):
                 trade.slippage_exit = result.slippage_exit
         return TradeResult(symbol=result.symbol, lot_size=result.lot_size, accepted=result.accepted, ticket=result.order_id, deal=result.deal, retcode=result.retcode, comment=result.comment, request=result.request)
 
-    def _modify_position(self: Any, ticket: str, sl: Optional[float]=None, tp: Optional[float]=None, comment: str='', symbol: Optional[str]=None, **kwargs) -> TradeResult:
+    def _modify_position(self, ticket: str, sl: Optional[float]=None, tp: Optional[float]=None, comment: str='', symbol: Optional[str]=None, **kwargs) -> TradeResult:
         """Broker-specific trade modification."""
         raise NotImplementedError
 
-    def modify_position(self: Any, trade: TradeRecord) -> bool:
+    def modify_position(self, trade: TradeRecord) -> bool:
         """Modify an open trade; return True if state changed."""
         return False
 
-    def _open_position(self: Any, symbol: str, size: float, direction: str, sl: float=None, tp: float=None, price: float=None, comment: str='Python trading system', position: str=None, **kwargs) -> OrderResult:
+    def _open_position(self, symbol: str, size: float, direction: str, sl: float=None, tp: float=None, price: float=None, comment: str='Python trading system', position: str=None, **kwargs) -> OrderResult:
         symbol_info_tick = mt5.symbol_info_tick(symbol)
         if not symbol_info_tick:
             logger.error(f'Failed to retrieve tick info for symbol: {symbol}')

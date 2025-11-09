@@ -10,17 +10,17 @@ logger = logging.getLogger(__name__)
 
 class BreakOutStrategy(Strategy):
 
-    def __init__(self: Any, config: StrategyConfig) -> Any:
+    def __init__(self, config: StrategyConfig) -> Any:
         super().__init__(config=config)
         self.range_by_symbol: dict[str, Range] = {}
 
-    def initialize(self: Any) -> Any:
+    def initialize(self) -> Any:
         for asset in self.assets:
             if not self.is_valid_symbol(asset.symbol):
                 raise ValueError(f"Symbol '{asset.symbol}' not available or not visible in Market Watch")
             self.range_by_symbol[asset.symbol] = Range(symbol=asset.symbol, high=float('-inf'), low=float('inf'), date=PlatformTime.today(), range_set=False)
 
-    def set_range(self: Any) -> Any:
+    def set_range(self) -> Any:
         now_min = PlatformTime.minutes_since_midnight()
         for asset in self.assets:
             range_ = self.range_by_symbol.get(asset.symbol)
@@ -37,7 +37,7 @@ class BreakOutStrategy(Strategy):
             except Exception as e:
                 logger.warning(f'[{self.strategy_name}] Failed to calculate range for {asset.symbol}: {e}')
 
-    def is_entry_signal(self: Any, asset: AssetConfig) -> str | None:
+    def is_entry_signal(self, asset: AssetConfig) -> str | None:
         if self.has_reached_max_trades(asset):
             return None
         now_min = PlatformTime.minutes_since_midnight()
@@ -53,7 +53,7 @@ class BreakOutStrategy(Strategy):
             return TRADE_DIRECTION_SELL
         return None
 
-    def is_exit_signal(self: Any, trade: TradeRecord) -> bool:
+    def is_exit_signal(self, trade: TradeRecord) -> bool:
         if trade.strategy != self.strategy_name:
             return False
         for asset in self.assets:

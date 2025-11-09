@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class BaseEngine(ABC):
 
-    def __init__(self: Any, account: Any, strategies: Any, state_manager: Any, connector_config: Any, backtester_config: Any, dashboard_manager: Any=None) -> Any:
+    def __init__(self, account: Any, strategies: Any, state_manager: Any, connector_config: Any, backtester_config: Any, dashboard_manager: Any=None) -> Any:
         """Initialize the engine with a list of strategies and a state manager."""
         self.account = account
         self.strategies = strategies
@@ -19,20 +19,20 @@ class BaseEngine(ABC):
         self.today = PlatformTime.now().day
         self.dashboard_manager = dashboard_manager
 
-    def initialize(self: Any) -> Any:
+    def initialize(self) -> Any:
         """Call the initialize method on all strategies."""
         logger.info('Initializing strategies...')
         for strategy in self.strategies:
             strategy.initialize()
         logger.info('All strategies initialized.')
 
-    def shutdown(self: Any) -> Any:
+    def shutdown(self) -> Any:
         """Finalize all strategies and perform shutdown procedures."""
         for strategy in self.strategies:
             strategy.finalize()
         logger.info('Trading system shutdown complete.')
 
-    def _run_strategies(self: Any) -> Any:
+    def _run_strategies(self) -> Any:
         if self.today != PlatformTime.now().day:
             setup_logger(LOG_PATH, self.connector_config.mode)
         for strategy in self.strategies:
@@ -81,7 +81,7 @@ class BaseEngine(ABC):
                     logger.warning(f'Error checking exits for {asset.symbol}: {e}')
         self.today = PlatformTime.now().day
 
-    def _update_profit_if_due(self: Any, timestamp: Any, last_update_timestamp: Any) -> Any:
+    def _update_profit_if_due(self, timestamp: Any, last_update_timestamp: Any) -> Any:
         """Update daily profit if the interval has elapsed since last update."""
         if timestamp - last_update_timestamp >= 300:
             for strategy in self.strategies:
@@ -95,6 +95,6 @@ class BaseEngine(ABC):
         return last_update_timestamp
 
     @abstractmethod
-    def run(self: Any) -> Any:
+    def run(self) -> Any:
         """Entry point for the engine execution loop."""
         pass

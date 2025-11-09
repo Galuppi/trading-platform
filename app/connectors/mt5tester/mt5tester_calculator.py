@@ -8,12 +8,12 @@ from app.common.config.constants import TRADE_DIRECTION_SELL
 
 class Mt5testerCalculator(Calculator):
 
-    def __init__(self: Any, symbol: Symbol, account: Account, backtester_config: BacktestConfig | None=None) -> Any:
+    def __init__(self, symbol: Symbol, account: Account, backtester_config: BacktestConfig | None=None) -> Any:
         self.symbol = symbol
         self.account = account
         self.slippage_per_lot = float(getattr(backtester_config, 'backtest_slippage_per_lot', 0.0) or 0.0)
 
-    def calculate_profit(self: Any, trade: TradeRecord) -> ProfitResult:
+    def calculate_profit(self, trade: TradeRecord) -> ProfitResult:
         if trade.entry_price is None or trade.exit_price is None:
             raise ValueError(f'Missing entry or exit price for trade {trade.ticket}')
         price_difference = trade.exit_price - trade.entry_price

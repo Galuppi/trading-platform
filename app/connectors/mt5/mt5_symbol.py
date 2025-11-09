@@ -10,77 +10,77 @@ logger = logging.getLogger(__name__)
 
 class Mt5Symbol(Symbol):
 
-    def get_ask_price(self: Any, symbol: str) -> float:
+    def get_ask_price(self, symbol: str) -> float:
         tick = mt5.symbol_info_tick(symbol)
         if tick is None:
             raise ValueError(f'Tick data not available for symbol: {symbol}')
         return tick.ask
 
-    def get_bid_price(self: Any, symbol: str) -> float:
+    def get_bid_price(self, symbol: str) -> float:
         tick = mt5.symbol_info_tick(symbol)
         if tick is None:
             raise ValueError(f'Tick data not available for symbol: {symbol}')
         return tick.bid
 
-    def is_valid_symbol(self: Any, symbol: str) -> bool:
+    def is_valid_symbol(self, symbol: str) -> bool:
         info = mt5.symbol_info(symbol)
         return info is not None and info.visible
 
-    def prepare_symbol(self: Any, symbol: str) -> bool:
+    def prepare_symbol(self, symbol: str) -> bool:
         return mt5.symbol_select(symbol, True)
 
-    def get_symbol_info(self: Any, symbol: str) -> Any:
+    def get_symbol_info(self, symbol: str) -> Any:
         return mt5.symbol_info(symbol)
 
-    def get_min_volume(self: Any, symbol: str) -> float:
+    def get_min_volume(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.volume_min
 
-    def get_volume_step(self: Any, symbol: str) -> float:
+    def get_volume_step(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.volume_step
 
-    def get_precision(self: Any, symbol: str) -> int:
+    def get_precision(self, symbol: str) -> int:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.digits
 
-    def get_contract_size(self: Any, symbol: str) -> float:
+    def get_contract_size(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.trade_contract_size
 
-    def get_tick_size(self: Any, symbol: str) -> float:
+    def get_tick_size(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.trade_tick_size
 
-    def get_point_size(self: Any, symbol: str) -> float:
+    def get_point_size(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.point
 
-    def get_currency_profit(self: Any, symbol: str) -> str:
+    def get_currency_profit(self, symbol: str) -> str:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.currency_profit
 
-    def get_tick_value(self: Any, symbol: str) -> float:
+    def get_tick_value(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
             raise ValueError(f'Symbol info not found for {symbol}')
         return info.trade_tick_value if info else 0.0
 
-    def get_high_low_range(self: Any, symbol: str, start_minute: int, end_minute: int, timeframe: str=TIMEFRAME_M1) -> Range:
+    def get_high_low_range(self, symbol: str, start_minute: int, end_minute: int, timeframe: str=TIMEFRAME_M1) -> Range:
         if not mt5.initialize():
             raise RuntimeError('MT5 initialization failed')
         now = PlatformTime.now()
@@ -95,5 +95,5 @@ class Mt5Symbol(Symbol):
         lows = [bar['low'] for bar in rates]
         return Range(symbol=symbol, high=max(highs), low=min(lows), date=PlatformTime.today())
 
-    def _map_timeframe(self: Any, tf: str) -> int:
+    def _map_timeframe(self, tf: str) -> int:
         return TIMEFRAME_MAP.get(tf, mt5.TIMEFRAME_M1)

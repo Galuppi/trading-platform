@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 class Mt5Calculator(Calculator):
 
-    def __init__(self: Any, symbol: Symbol, account: Account) -> Any:
+    def __init__(self, symbol: Symbol, account: Account) -> Any:
         self.symbol = symbol
         self.account = account
 
-    def calculate_profit(self: Any, entry_price: Any, exit_price: Any, lot_size: Any, direction: Any) -> ProfitResult:
+    def calculate_profit(self, entry_price: Any, exit_price: Any, lot_size: Any, direction: Any) -> ProfitResult:
         return ProfitResult()

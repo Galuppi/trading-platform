@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Mt5testerSymbol(Symbol):
 
-    def __init__(self: Any, backtester_config: Any=None, account: Any=None) -> Any:
+    def __init__(self, backtester_config: Any=None, account: Any=None) -> Any:
         self.account = account
         self.backtester_config = backtester_config
         self.data_by_symbol = {}
@@ -21,7 +21,7 @@ class Mt5testerSymbol(Symbol):
         self.load_historical_data()
         self.preload_symbol_info()
 
-    def load_historical_data(self: Any) -> Any:
+    def load_historical_data(self) -> Any:
         timeframe = self.backtester_config.backtest_timeframe.upper()
         data_root_path = DATA_PATH
         for symbol_path in data_root_path.iterdir():
@@ -39,7 +39,7 @@ class Mt5testerSymbol(Symbol):
                     combined_df.sort_index(inplace=True)
                     self.data_by_symbol[symbol] = combined_df
 
-    def preload_symbol_info(self: Any) -> Any:
+    def preload_symbol_info(self) -> Any:
         if not mt5.initialize():
             raise RuntimeError(f'Failed to initialize MT5: {mt5.last_error()}')
         for symbol in self.data_by_symbol.keys():
@@ -50,13 +50,13 @@ class Mt5testerSymbol(Symbol):
             self.symbol_info_cache[symbol.upper()] = info
         logger.info(f'Preloaded symbol info for {len(self.symbol_info_cache)} symbols.')
 
-    def _get_mt5_info(self: Any, symbol: str) -> Any:
+    def _get_mt5_info(self, symbol: str) -> Any:
         info = self.symbol_info_cache.get(symbol.upper())
         if not info:
             raise RuntimeError(f"Missing symbol info for {symbol}. Make sure it's preloaded.")
         return info
 
-    def get_symbol_info(self: Any, symbol: str, timestamp: datetime) -> SymbolInfo:
+    def get_symbol_info(self, symbol: str, timestamp: datetime) -> SymbolInfo:
         symbol = symbol.upper()
         timestamp = timestamp.replace(tzinfo=None)
         df = self.data_by_symbol.get(symbol)
@@ -69,7 +69,7 @@ class Mt5testerSymbol(Symbol):
         row = df.loc[timestamp]
         return SymbolInfo(symbol=symbol, time=timestamp, ask_price=row['close'], bid_price=row['close'], open=row['open'], high=row['high'], low=row['low'], close=row['close'], lot_size=row['volume'])
 
-    def get_symbol_data_range(self: Any, symbol: str, start_time: datetime, end_time: datetime) -> List[PriceRecord]:
+    def get_symbol_data_range(self, symbol: str, start_time: datetime, end_time: datetime) -> List[PriceRecord]:
         symbol = symbol.upper()
         df = self.data_by_symbol.get(symbol)
         if df is None:
@@ -82,7 +82,7 @@ class Mt5testerSymbol(Symbol):
             return []
         return [PriceRecord(symbol=symbol, time=row.Index, open=row.open, high=row.high, low=row.low, close=row.close, volume=row.volume) for row in sliced.itertuples()]
 
-    def get_high_low_range(self: Any, symbol: str, start_minute: int, end_minute: int) -> Range:
+    def get_high_low_range(self, symbol: str, start_minute: int, end_minute: int) -> Range:
         now = PlatformTime.now().replace(second=0, microsecond=0)
         start_time = now.replace(hour=0, minute=0) + timedelta(minutes=start_minute)
         end_time = now.replace(hour=0, minute=0) + timedelta(minutes=end_minute)
@@ -94,40 +94,40 @@ class Mt5testerSymbol(Symbol):
         lows = [r.low for r in records]
         return Range(symbol=symbol, high=max(highs), low=min(lows), date=start_time.date(), range_set=True)
 
-    def get_bid_price(self: Any, symbol: str, timestamp: Optional[datetime]=None) -> float:
+    def get_bid_price(self, symbol: str, timestamp: Optional[datetime]=None) -> float:
         timestamp = timestamp or PlatformTime.now()
         return self.get_symbol_info(symbol, timestamp).bid_price
 
-    def get_ask_price(self: Any, symbol: str, timestamp: Optional[datetime]=None) -> float:
+    def get_ask_price(self, symbol: str, timestamp: Optional[datetime]=None) -> float:
         timestamp = timestamp or PlatformTime.now()
         return self.get_symbol_info(symbol, timestamp).ask_price
 
-    def is_valid_symbol(self: Any, symbol: str) -> bool:
+    def is_valid_symbol(self, symbol: str) -> bool:
         return symbol.upper() in self.symbol_info_cache
 
-    def prepare_symbol(self: Any, symbol: str) -> bool:
+    def prepare_symbol(self, symbol: str) -> bool:
         return self.is_valid_symbol(symbol)
 
-    def get_min_volume(self: Any, symbol: str) -> float:
+    def get_min_volume(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).volume_min
 
-    def get_volume_step(self: Any, symbol: str) -> float:
+    def get_volume_step(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).volume_step
 
-    def get_precision(self: Any, symbol: str) -> int:
+    def get_precision(self, symbol: str) -> int:
         return self._get_mt5_info(symbol).digits
 
-    def get_currency_profit(self: Any, symbol: str) -> str:
+    def get_currency_profit(self, symbol: str) -> str:
         return self._get_mt5_info(symbol).currency_profit
 
-    def get_contract_size(self: Any, symbol: str) -> float:
+    def get_contract_size(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).trade_contract_size
 
-    def get_tick_size(self: Any, symbol: str) -> float:
+    def get_tick_size(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).trade_tick_size
 
-    def get_tick_value(self: Any, symbol: str) -> float:
+    def get_tick_value(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).trade_tick_value
 
-    def get_point_size(self: Any, symbol: str) -> float:
+    def get_point_size(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).point

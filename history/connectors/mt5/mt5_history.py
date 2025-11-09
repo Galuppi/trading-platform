@@ -12,10 +12,10 @@ TIMEFRAME_MAP = {TIMEFRAME_M1: mt5.TIMEFRAME_M1, TIMEFRAME_M5: mt5.TIMEFRAME_M5,
 
 class Mt5History(History):
 
-    def __init__(self: Any, calculator: HistoryCalculator) -> Any:
+    def __init__(self, calculator: HistoryCalculator) -> Any:
         self.calculator = calculator
 
-    def get_historical_data(self: Any, symbol: str, timeframe: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    def get_historical_data(self, symbol: str, timeframe: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
         if not mt5.initialize():
             raise RuntimeError('MT5 initialization failed')
         mt5_timeframe = TIMEFRAME_MAP.get(timeframe)

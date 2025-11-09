@@ -10,15 +10,15 @@ logger = logging.getLogger(__name__)
 class TurnoverTuesdayStrategy(Strategy):
     TRADE_DIRECTION = TRADE_DIRECTION_BUY
 
-    def __init__(self: Any, config: StrategyConfig) -> Any:
+    def __init__(self, config: StrategyConfig) -> Any:
         super().__init__(config=config)
 
-    def initialize(self: Any) -> Any:
+    def initialize(self) -> Any:
         for asset in self.assets:
             if not self.is_valid_symbol(asset.symbol):
                 raise ValueError(f"Symbol '{asset.symbol}' not available or not visible in Market Watch")
 
-    def is_entry_signal(self: Any, asset: AssetConfig) -> str | None:
+    def is_entry_signal(self, asset: AssetConfig) -> str | None:
         if self.has_reached_max_trades(asset):
             return None
         if not PlatformTime.is_matching_weekday(asset.open_day or 2):
@@ -28,7 +28,7 @@ class TurnoverTuesdayStrategy(Strategy):
             return self.TRADE_DIRECTION
         return None
 
-    def is_exit_signal(self: Any, trade: TradeRecord) -> bool:
+    def is_exit_signal(self, trade: TradeRecord) -> bool:
         if trade.strategy != self.strategy_name:
             return False
         for asset in self.assets:

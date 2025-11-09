@@ -16,7 +16,7 @@ from app.loaders.loader_orderrequest import build_order_request
 
 class Strategy(ABC):
 
-    def __init__(self: Any, config: StrategyConfig) -> Any:
+    def __init__(self, config: StrategyConfig) -> Any:
         """Initialize the strategy with configuration."""
         self.config: StrategyConfig = config
         self.assets: list[AssetConfig] = config.assets
@@ -28,7 +28,7 @@ class Strategy(ABC):
         self.calculator: Optional[Calculator] = None
         self.state_manager = None
 
-    def attach_services(self: Any, *, connector: Connector, account: Account, symbol: Symbol, trader: Trade, calculator: Calculator, state_manager) -> Any:
+    def attach_services(self, *, connector: Connector, account: Account, symbol: Symbol, trader: Trade, calculator: Calculator, state_manager) -> Any:
         """Attach external services required for strategy execution."""
         self.connector = connector
         self.account = account
@@ -37,19 +37,19 @@ class Strategy(ABC):
         self.calculator = calculator
         self.state_manager = state_manager
 
-    def set_holidays(self: Any, holidays: list[str]) -> Any:
+    def set_holidays(self, holidays: list[str]) -> Any:
         """Set the list of holiday dates (ISO format) to avoid trading."""
         self.holidays = holidays
 
-    def is_valid_symbol(self: Any, symbol: str) -> bool:
+    def is_valid_symbol(self, symbol: str) -> bool:
         """Check if the symbol is valid and can be prepared."""
         return self.symbol.prepare_symbol(symbol) if self.symbol else False
 
-    def is_holiday(self: Any) -> bool:
+    def is_holiday(self) -> bool:
         """Return True if today is a defined trading holiday."""
         return PlatformTime.today() in self.holidays
 
-    def is_market_open(self: Any) -> bool:
+    def is_market_open(self) -> bool:
         """Check if the market is currently open based on strategy config."""
         if not self.config.market_hours:
             return False
@@ -57,11 +57,11 @@ class Strategy(ABC):
         current_day = PlatformTime.now().strftime('%A')
         return PlatformTime.is_within_market_hours(current_day, sessions)
 
-    def prepare_order(self: Any, asset: AssetConfig, direction: str) -> OrderRequest:
+    def prepare_order(self, asset: AssetConfig, direction: str) -> OrderRequest:
         """Build an order request with calculated lot size based on strategy rules."""
         return build_order_request(asset=asset, direction=direction, config=self.config, calculator=self.calculator, strategy_name=self.strategy_name, strategy_display_name=self.strategy_display_name)
 
-    def is_entry_allowed(self: Any, asset: AssetConfig, order: OrderRequest) -> bool:
+    def is_entry_allowed(self, asset: AssetConfig, order: OrderRequest) -> bool:
         """Return True if a new trade is allowed under strategy and asset constraints."""
         if self.is_holiday() or not self.is_market_open():
             return False
@@ -89,11 +89,11 @@ class Strategy(ABC):
             return False
         return self.account.has_sufficient_margin(order)
 
-    def is_exit_allowed(self: Any, trade: TradeRecord) -> bool:
+    def is_exit_allowed(self, trade: TradeRecord) -> bool:
         """Check if conditions allow this trade to be closed."""
         return not self.is_holiday() and self.is_market_open()
 
-    def execute_entry(self: Any, order: OrderRequest) -> Any:
+    def execute_entry(self, order: OrderRequest) -> Any:
         """Send a market order and record the trade if accepted."""
         if order.lot_size <= 0:
             return
@@ -104,11 +104,11 @@ class Strategy(ABC):
             trade = create_trade_record(result=result, order=order, entry_price=entry_price, strategy_name=self.strategy_name)
             self.state_manager.add_trade(trade)
 
-    def set_range(self: Any) -> Any:
+    def set_range(self) -> Any:
         """Optional hook to update internal strategy state per tick/cycle."""
         pass
 
-    def execute_exit(self: Any, trade: TradeRecord, stopped: bool=False) -> None:
+    def execute_exit(self, trade: TradeRecord, stopped: bool=False) -> None:
         """Send a market order and record the trade if accepted."""
         result = self.trade.close_position(trade)
         if not result or not result.accepted:
@@ -120,17 +120,17 @@ class Strategy(ABC):
             trade.comment = 'Closed by signal'
         self.state_manager.add_trade(trade)
 
-    def manage_entry(self: Any, trade: TradeRecord) -> None:
+    def manage_entry(self, trade: TradeRecord) -> None:
         """Strategy-level trade management hook."""
         changed = self.trade.modify_position(trade)
         if changed:
             self.state_manager.add_trade(trade)
 
-    def finalize(self: Any) -> Any:
+    def finalize(self) -> Any:
         """Hook for cleanup or final adjustments before shutdown."""
         pass
 
-    def has_reached_max_trades(self: Any, asset: AssetConfig) -> bool:
+    def has_reached_max_trades(self, asset: AssetConfig) -> bool:
         """Return True if this strategy has reached its max trades for the asset today."""
         open_trades = self.state_manager.get_open_trades(symbol=asset.symbol, strategy=self.strategy_name, date=PlatformTime.today())
         max_total = asset.max_total_trades or float('inf')
@@ -143,7 +143,7 @@ class Strategy(ABC):
             return True
         return False
 
-    def is_sl_tp_hit(self: Any, trade: TradeRecord) -> bool:
+    def is_sl_tp_hit(self, trade: TradeRecord) -> bool:
         if trade.status != TRADE_STATUS_OPEN:
             return False
         ask = self.symbol.get_ask_price(trade.symbol)
@@ -163,26 +163,26 @@ class Strategy(ABC):
         return False
 
     @property
-    def strategy_name(self: Any) -> str:
+    def strategy_name(self) -> str:
         """Return the lowercase class name as the strategy identifier."""
         return self.__class__.__name__.lower()
 
     @property
-    def strategy_display_name(self: Any) -> str:
+    def strategy_display_name(self) -> str:
         """Return the configured strategy label or fallback to strategy name."""
         return self.config.display_name or self.strategy_name
 
     @abstractmethod
-    def initialize(self: Any) -> Any:
+    def initialize(self) -> Any:
         """Initialize internal state and prepare for execution."""
         pass
 
     @abstractmethod
-    def is_entry_signal(self: Any, asset: AssetConfig) -> Optional[str]:
+    def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
         """Check if market conditions trigger an entry signal."""
         pass
 
     @abstractmethod
-    def is_exit_signal(self: Any, trade: TradeRecord) -> bool:
+    def is_exit_signal(self, trade: TradeRecord) -> bool:
         """Check if market conditions trigger an exit signal for a trade."""
         pass

@@ -12,19 +12,19 @@ logger = logging.getLogger(__name__)
 
 class GenericCsvDownloader(Download):
 
-    def __init__(self: Any, config: DownloaderConfig) -> Any:
+    def __init__(self, config: DownloaderConfig) -> Any:
         self.config = config
         self.connector = None
         self.history: History = None
 
-    def attach_services(self: Any, connector: Any, history: History) -> Any:
+    def attach_services(self, connector: Any, history: History) -> Any:
         self.connector = connector
         self.history = history
 
-    def initialize(self: Any) -> Any:
+    def initialize(self) -> Any:
         logger.info(f'Initialized downloader: {self.config.name}')
 
-    def run(self: Any, config: Any=None) -> Any:
+    def run(self, config: Any=None) -> Any:
         logger.info(f'Starting downloads for {self.config.name}')
         for asset in self.config.assets:
             output_dir = DATA_PATH / asset.symbol

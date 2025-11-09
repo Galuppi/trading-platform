@@ -13,7 +13,7 @@ TradeLike = Union[TradeRecord, Dict[str, Any]]
 
 
 class StateManager:
-    def __init__(self: Any, state_path: Path, account: Account, persist_enabled: bool = True) -> Any:
+    def __init__(self, state_path: Path, account: Account, persist_enabled: bool = True) -> Any:
         self.state_path = state_path
         self.persist_enabled = persist_enabled
         self.state: Dict[str, Dict[str, Any]] = {}
@@ -21,10 +21,10 @@ class StateManager:
         self.account = account
         self.state = self.load()
 
-    def _key(self: Any, trade_id: Any) -> str:
+    def _key(self, trade_id: Any) -> str:
         return str(trade_id)
 
-    def load(self: Any) -> Dict[str, Dict[str, Any]]:
+    def load(self) -> Dict[str, Dict[str, Any]]:
         if not self.persist_enabled:
             return {}
         if self.state_path.exists():
@@ -43,7 +43,7 @@ class StateManager:
                     return {self._key(k): v for k, v in data.items()}
         return {}
 
-    def _persist(self: Any, state: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
+    def _persist(self, state: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
         if not self.persist_enabled:
             return
         if state is None:
@@ -51,12 +51,12 @@ class StateManager:
         with open(self.state_path, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=4)
 
-    def save(self: Any) -> None:
+    def save(self) -> None:
         if not self.persist_enabled:
             return
         self._persist()
 
-    def add_trade(self: Any, trade: TradeRecord) -> None:
+    def add_trade(self, trade: TradeRecord) -> None:
         if not isinstance(trade, TradeRecord):
             raise TypeError(f"add_trade expected TradeRecord, got {type(trade).__name__}")
         k = self._key(trade.id)
@@ -64,7 +64,7 @@ class StateManager:
         self.state[k] = asdict(trade)
         self.save()
 
-    def save_all_trades(self: Any, trades: List[TradeLike]) -> None:
+    def save_all_trades(self, trades: List[TradeLike]) -> None:
         meta = {k: v for k, v in self.state.items() if self._key(k).startswith("_")}
         new_trades: Dict[str, Dict[str, Any]] = {}
         new_cache: Dict[str, TradeRecord] = {}
@@ -86,7 +86,7 @@ class StateManager:
         self._cache = new_cache
         self.save()
 
-    def get_trade_by_id(self: Any, trade_id: str) -> Optional[TradeRecord]:
+    def get_trade_by_id(self, trade_id: str) -> Optional[TradeRecord]:
         k = self._key(trade_id)
         cached = self._cache.get(k)
         if cached is not None:
@@ -98,7 +98,7 @@ class StateManager:
             return obj
         return None
 
-    def get_all_trades(self: Any) -> List[TradeRecord]:
+    def get_all_trades(self) -> List[TradeRecord]:
         return [
             self._cache.get(k) or self._cache.setdefault(k, TradeRecord(**v))
             for k, v in self.state.items()
@@ -106,7 +106,7 @@ class StateManager:
         ]
 
     def get_execute_entrys(
-        self: Any,
+        self,
         symbol: Optional[str] = None,
         strategy: Optional[str] = None,
         trade_type: Optional[str] = None,
@@ -136,7 +136,7 @@ class StateManager:
         return result
 
     def count_trades_today(
-        self: Any,
+        self,
         strategy: Optional[str] = None,
         symbol: Optional[str] = None,
         trade_type: Optional[str] = None,
@@ -164,7 +164,7 @@ class StateManager:
         return count
 
     def can_open_trade(
-        self: Any,
+        self,
         max_per_day: int,
         strategy: Optional[str] = None,
         symbol: Optional[str] = None,
@@ -174,7 +174,7 @@ class StateManager:
             return False
         return self.count_trades_today(strategy, symbol, trade_type) < max_per_day
 
-    def clean_old_closed_trades(self: Any, max_age_hours: int = 24) -> None:
+    def clean_old_closed_trades(self, max_age_hours: int = 24) -> None:
         cutoff = PlatformTime.now() - PlatformTime.timedelta(hours=max_age_hours)
         new_state: Dict[str, Dict[str, Any]] = {}
         for trade_id, trade in self.state.items():
@@ -201,7 +201,7 @@ class StateManager:
             self._cache.pop(k, None)
         self.save()
 
-    def update_daily_profit(self: Any, equity: float, balance: float) -> None:
+    def update_daily_profit(self, equity: float, balance: float) -> None:
         snapshot = DailyProfitSnapshot(
             timestamp=PlatformTime.datetime_str(),
             equity=equity,
@@ -211,14 +211,14 @@ class StateManager:
         self.state["_daily_profit"] = asdict(snapshot)
         self.save()
 
-    def get_state_balances(self: Any) -> StateBalances:
+    def get_state_balances(self) -> StateBalances:
         balance = round(self.account.get_balance(), 2)
         equity = round(self.account.get_equity(), 2)
         profit = round(equity - balance, 2)
         return StateBalances(balance=balance, equity=equity, profit=profit)
 
     def get_open_trades(
-        self: Any,
+        self,
         symbol: Optional[str] = None,
         strategy: Optional[str] = None,
         date: Optional[PlatformTime.date] = None,
@@ -250,7 +250,7 @@ class StateManager:
             trades.append(obj)
         return trades
 
-    def sync_status_with_broker(self: Any, open_ticket_ids: List[str]) -> None:
+    def sync_status_with_broker(self, open_ticket_ids: List[str]) -> None:
         open_ticket_ids_set = set(open_ticket_ids)
         for trade in self.get_all_trades():
             if trade.status == TRADE_STATUS_OPEN and str(trade.ticket) not in open_ticket_ids_set:
@@ -259,7 +259,7 @@ class StateManager:
                 trade.comment = "Closed externally"
                 self.add_trade(trade)
 
-    def sync_tickets_with_broker(self: Any, closed_tickets: List[TradeRecord]) -> None:
+    def sync_tickets_with_broker(self, closed_tickets: List[TradeRecord]) -> None:
         if not closed_tickets:
             return
         closed_tickets_map = {str(t.ticket): t for t in closed_tickets}
@@ -284,19 +284,19 @@ class StateManager:
             if updated:
                 self.add_trade(trade)
 
-    def save_server_time_offset(self: Any, offset_hours: float) -> None:
+    def save_server_time_offset(self, offset_hours: float) -> None:
         self.state["_server_time_offset"] = {"offset_hours": offset_hours}
 
-    def get_server_time_offset(self: Any) -> Optional[float]:
+    def get_server_time_offset(self) -> Optional[float]:
         offset_info = self.state.get("_server_time_offset")
         if isinstance(offset_info, dict):
             return offset_info.get("offset_hours")
         return None
 
-    def save_server_last_tick(self: Any, last_tick: int) -> None:
+    def save_server_last_tick(self, last_tick: int) -> None:
         self.state["_server_last_tick"] = {"last_tick": last_tick}
 
-    def get_server_last_tick(self: Any) -> Optional[int]:
+    def get_server_last_tick(self) -> Optional[int]:
         last_tick_info = self.state.get("_server_last_tick")
         if isinstance(last_tick_info, dict):
             return last_tick_info.get("last_tick")

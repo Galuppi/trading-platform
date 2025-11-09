@@ -10,10 +10,10 @@ from app.common.config.constants import TRADE_DIRECTION_BUY
 class Calculator(ABC):
 
     @abstractmethod
-    def calculate_profit(self: Any, entry_price: float, exit_price: float, lot_size: float, direction: str) -> ProfitResult:
+    def calculate_profit(self, entry_price: float, exit_price: float, lot_size: float, direction: str) -> ProfitResult:
         pass
 
-    def calculate_lot_size_by_capital(self: Any, order: OrderRequest) -> float:
+    def calculate_lot_size_by_capital(self, order: OrderRequest) -> float:
         ask_price = self.symbol.get_ask_price(order.symbol)
         contract_size = self.symbol.get_contract_size(order.symbol)
         if ask_price <= 0 or contract_size <= 0:
@@ -24,7 +24,7 @@ class Calculator(ABC):
         rounded_lot = self.round_lot_size(raw_lot, step)
         return max(rounded_lot, min_volume)
 
-    def calculate_lot_size_by_risk(self: Any, order: OrderRequest, stop_loss_points: int) -> float:
+    def calculate_lot_size_by_risk(self, order: OrderRequest, stop_loss_points: int) -> float:
         if stop_loss_points <= 0:
             return 0.0
         tick_value = self.symbol.get_tick_value(order.symbol)
@@ -45,7 +45,7 @@ class Calculator(ABC):
         rounded_lot = self.round_lot_size(raw_lot, step)
         return max(rounded_lot, min_volume)
 
-    def calculate_stop_loss(self: Any, order: OrderRequest, entry_price: float) -> float:
+    def calculate_stop_loss(self, order: OrderRequest, entry_price: float) -> float:
         if order.stop_loss_points is None or order.stop_loss_points <= 0:
             return 0.0
         tick_size = self.symbol.get_tick_size(order.symbol)
@@ -56,7 +56,7 @@ class Calculator(ABC):
             raw_sl = entry_price + order.stop_loss_points * tick_size
         return self.normalize(raw_sl, digits)
 
-    def calculate_take_profit(self: Any, order: OrderRequest, entry_price: float) -> float:
+    def calculate_take_profit(self, order: OrderRequest, entry_price: float) -> float:
         if order.stop_loss_points is None or order.stop_loss_points <= 0:
             return 0.0
         rr_ratio = 2
@@ -69,7 +69,7 @@ class Calculator(ABC):
             raw_tp = entry_price - tp_points * tick_size
         return self.normalize(raw_tp, digits)
 
-    def calculate_stop_loss_points(self: Any, order: OrderRequest, range_stop_loss: bool=False, range_open_min: Optional[int]=None, range_close_min: Optional[int]=None) -> int:
+    def calculate_stop_loss_points(self, order: OrderRequest, range_stop_loss: bool=False, range_open_min: Optional[int]=None, range_close_min: Optional[int]=None) -> int:
         tick_size = self.symbol.get_tick_size(order.symbol)
         if tick_size <= 0:
             return 0.0
@@ -99,18 +99,18 @@ class Calculator(ABC):
             stop_loss_points_int = int(round(stop_loss_points))
         return max(stop_loss_points_int, 0)
 
-    def recalculate_range(self: Any, range_: Range, price: float) -> Any:
+    def recalculate_range(self, range_: Range, price: float) -> Any:
         if range_.range_set:
             return
         range_.high = max(range_.high, price)
         range_.low = min(range_.low, price)
 
-    def calculate_allocated_capital(self: Any, config: StrategyConfig, asset: AssetConfig) -> float:
+    def calculate_allocated_capital(self, config: StrategyConfig, asset: AssetConfig) -> float:
         if not asset.percent_of_capital:
             return 0.0
         return config.total_strategy_capital * (asset.percent_of_capital / 100)
 
-    def round_lot_size(self: Any, raw_lot: float, step: float) -> float:
+    def round_lot_size(self, raw_lot: float, step: float) -> float:
         if step == 1:
             precision = 0
         elif step >= 0.1:
@@ -119,7 +119,7 @@ class Calculator(ABC):
             precision = 2
         return round(raw_lot, precision)
 
-    def normalize(self: Any, value: float, digits: int) -> float:
+    def normalize(self, value: float, digits: int) -> float:
         if value is None:
             return None
         if digits < 0:

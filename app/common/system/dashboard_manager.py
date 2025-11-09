@@ -12,14 +12,14 @@ init(autoreset=True)
 class DashboardManager:
     HTML_TEMPLATE = '<!DOCTYPE html>\n    <html lang="en">\n    <head>\n        <meta charset="UTF-8">\n        <meta name="viewport" content="width=device-width, initial-scale=1.0">\n        <title>Trading System Status</title>\n        <meta http-equiv="refresh" content="10">\n        <style>\n            body {{font-family:\'Segoe UI\',Tahoma,Geneva,Verdana,sans-serif;background:#1e1e1e;color:#e0e0e0;margin:0;padding:20px;}}\n            .container {{max-width:1000px;margin:0 auto;}}\n            h1 {{color:#4CAF50;text-align:center;margin-bottom:10px;}}\n            .meta {{text-align:center;color:#aaa;font-size:0.9em;margin-bottom:20px;}}\n            .section {{\n                background:#2d2d2d;\n                margin:15px 0;\n                padding:16px;\n                border-radius:8px;\n                border-left:4px solid #4CAF50;\n                font-size:0.95em;\n            }}\n            .section h3 {{\n                margin:0 0 12px 0;\n                color:#4CAF50;\n                font-size:1.1em;\n            }}\n            .item {{margin:6px 0;}}\n            .label {{color:#4CAF50;font-weight:bold;}}\n            .profit-neg {{color:#f44336;}}\n            .profit-pos {{color:#4CAF50;}}\n            .market-open {{color:#4CAF50;}}\n            .market-closed {{color:#f44336;}}\n            .strategy {{background:#333;margin:10px 0;padding:12px;border-radius:6px;}}\n            .footer {{text-align:center;margin-top:30px;color:#777;font-size:0.85em;}}\n            .warning {{color:#ff9800;}}\n        </style>\n    </head>\n    <body>\n        <div class="container">\n            <h1>Trading System Status</h1>\n            <div class="meta">Mode: {mode} • {date} • Local: {local_time} • Platform: {platform_time}</div>\n            <div class="section">\n                <h3>Balances</h3>\n                {balances_html}\n            </div>\n            <div class="section">\n                <h3>Strategies</h3>\n                {strategies_html}\n            </div>\n            <div class="footer">Last updated: {timestamp}</div>\n        </div>\n    </body>\n    </html>'
 
-    def __init__(self: Any, dashboard_path: str=str(DASHBOARD_PATH)) -> Any:
+    def __init__(self, dashboard_path: str=str(DASHBOARD_PATH)) -> Any:
         self.dashboard_path = dashboard_path
         self._browser_opened = False
 
-    def _clear_terminal(self: Any) -> None:
+    def _clear_terminal(self) -> None:
         print('\x1bc', end='')
 
-    def _open_browser_once(self: Any) -> None:
+    def _open_browser_once(self) -> None:
         if not self._browser_opened:
             try:
                 webbrowser.open(f'file://{os.path.abspath(self.dashboard_path)}', new=2)
@@ -27,7 +27,7 @@ class DashboardManager:
             except Exception:
                 pass
 
-    def _build_html(self: Any, strategies: List[Any], state_manager: Any, mode: str, backtester_config: Optional[Any], summary_writer: Optional[Any]) -> str:
+    def _build_html(self, strategies: List[Any], state_manager: Any, mode: str, backtester_config: Optional[Any], summary_writer: Optional[Any]) -> str:
         current_time = datetime.now()
         timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
         current_date = PlatformTime.now().strftime('%Y-%m-%d')
@@ -49,7 +49,7 @@ class DashboardManager:
             balances_html = self._build_live_balances(state_manager)
         return self.HTML_TEMPLATE.format(mode=mode.capitalize(), date=current_date, local_time=local_time, platform_time=platform_time, strategies_html=strategies_html, balances_html=balances_html, timestamp=timestamp)
 
-    def _build_backtest_balances(self: Any, backtester_config: Any, summary_writer: Any) -> Any:
+    def _build_backtest_balances(self, backtester_config: Any, summary_writer: Any) -> Any:
         if not backtester_config or not summary_writer:
             return "<div class='warning'>[WARNING] Backtest config/writer missing</div>"
         try:
@@ -63,7 +63,7 @@ class DashboardManager:
         except Exception as exc:
             return f"<div class='warning'>[ERROR] Backtest: {exc}</div>"
 
-    def _build_live_balances(self: Any, state_manager: Any) -> Any:
+    def _build_live_balances(self, state_manager: Any) -> Any:
         try:
             balance_state = state_manager.get_state_balances()
             equity_str = f'{balance_state.equity:.2f}'
@@ -75,7 +75,7 @@ class DashboardManager:
         except Exception as exc:
             return f"<div class='warning'>[ERROR] Live balance: {exc}</div>"
 
-    def _write_dashboard(self: Any, html_content: str) -> None:
+    def _write_dashboard(self, html_content: str) -> None:
         try:
             path = os.path.abspath(self.dashboard_path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -85,7 +85,7 @@ class DashboardManager:
         except Exception as exc:
             print(f'{Fore.YELLOW}[WARN] Dashboard write failed: {exc}')
 
-    def _print_terminal_log(self: Any, strategies: List[Any], state_manager: Any, mode: str) -> None:
+    def _print_terminal_log(self, strategies: List[Any], state_manager: Any, mode: str) -> None:
         self._clear_terminal()
         print('\n' + '=' * 60)
         print(f" STATUS | {mode.upper()} | {PlatformTime.now().strftime('%Y-%m-%d %H:%M')}")
@@ -106,7 +106,7 @@ class DashboardManager:
                 print(' [balance unavailable]')
         print('=' * 60 + '\n')
 
-    def print_status_report(self: Any, strategies: List[Any], state_manager: Any, mode: str, backtester_config: Optional[Any]=None, summary_writer: Optional[Any]=None, *, log_to_terminal: bool=False) -> None:
+    def print_status_report(self, strategies: List[Any], state_manager: Any, mode: str, backtester_config: Optional[Any]=None, summary_writer: Optional[Any]=None, *, log_to_terminal: bool=False) -> None:
         try:
             html_content = self._build_html(strategies, state_manager, mode, backtester_config, summary_writer)
             self._write_dashboard(html_content)
