@@ -19,7 +19,7 @@ class Engine(BaseEngine):
                     last_tick_timestamp = self.state_manager.get_server_last_tick()
                     current_tick_timestamp = self.account.get_server_tick_timestanp()
                     server_time_offset = None
-                    if last_tick_timestamp != current_tick_timestamp:
+                    if last_tick_timestamp is not None and last_tick_timestamp != current_tick_timestamp:
                         server_time_offset = self.account.get_server_offset_hours()
                     if server_time_offset is not None:
                         PlatformTime.set_offset(server_time_offset)
