@@ -1,0 +1,41 @@
+#!/bin/bash
+# =============================================
+# CLEAN GIT HISTORY – Keep only current files
+# Run this in Git Bash (inside VS Code terminal)
+# =============================================
+ 
+echo "=== WARNING ==="
+echo "This will PERMANENTLY delete all Git history and force-push to GitHub!"
+echo "Your repo will have only ONE commit with the current files."
+echo ""
+read -p "Type YES to continue: " confirm
+if [[ "$confirm" != "YES" ]]; then
+    echo "Aborted."
+    exit 1
+fi
+ 
+# 1. Create orphan branch with no history
+git checkout --orphan clean-start
+ 
+# 2. Remove all files from index (but keep them on disk)
+git rm -rf --cached .
+ 
+# 3. Add current files fresh
+git add -A
+ 
+# 4. First clean commit
+git commit -m "Initial commit – clean repository (history wiped)"
+ 
+# 5. Delete old main branch locally
+git branch -D main
+ 
+# 6. Rename current branch to main
+git branch -m main
+ 
+# 7. Force push to GitHub (safe version)
+git push --force-with-lease origin main
+ 
+echo ""
+echo "DONE!"
+echo "Your repo now has ZERO history and only the current files."
+echo "GitHub link: $(git remote get-url origin)"
