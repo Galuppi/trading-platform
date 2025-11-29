@@ -1,0 +1,42 @@
+from typing import Any
+
+import logging
+from app.common.system.platform_time import PlatformTime
+from app.common.config.constants import MODE_LIVE
+from app.base.base_engine import BaseEngine
+logger = logging.getLogger(__name__)
+
+class Engine(BaseEngine):
+
+    def run(self) -> Any:
+        """Perform the defined operation."""
+        self.initialize()
+        PlatformTime.sleep(1)
+        self.dashboard_manager.print_status_report(self.strategies, self.state_manager, MODE_LIVE, log_to_terminal=True)
+        last_profit_update = 0
+        try:
+            while True:
+                current_timestamp = PlatformTime.timestamp()
+                if self.connector_config.mode == MODE_LIVE:
+                    last_tick_timestamp = self.state_manager.get_server_last_tick()
+                    current_tick_timestamp = self.account.get_server_tick_timestanp()
+                    server_time_offset = None
+                    if last_tick_timestamp is not None and last_tick_timestamp != current_tick_timestamp:
+                        server_time_offset = self.account.get_server_offset_hours()
+                    if server_time_offset is not None:
+                        PlatformTime.set_offset(server_time_offset)
+                        self.state_manager.save_server_time_offset(server_time_offset)
+                    if server_time_offset is None and self.state_manager.get_server_time_offset() is not None:
+                        persisted_offset = self.state_manager.get_server_time_offset()
+                        PlatformTime.set_offset(persisted_offset)
+                    open_ticket_ids = self.account.get_open_tickets()
+                    self.state_manager.sync_status_with_broker(open_ticket_ids)
+                    closed_tickets = self.account.get_closed_tickets()
+                    self.state_manager.sync_tickets_with_broker(closed_tickets)
+                    self.state_manager.save_server_last_tick(current_tick_timestamp)
+                self._run_strategies()
+                last_profit_update = self._update_profit_if_due(current_timestamp, last_profit_update)
+                self.dashboard_manager.print_status_report(self.strategies, self.state_manager, MODE_LIVE, log_to_terminal=True)
+                PlatformTime.sleep(30)
+        except KeyboardInterrupt:
+            self.shutdown()

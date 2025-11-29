@@ -1,0 +1,55 @@
+name: TurnoverTuesday
+display_name: Turnover Tuesday 1.0
+enabled: true
+total_strategy_capital: 100000
+positioning: capital
+holiday_calendar: us
+
+market_hours:
+  sessions:
+    Monday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Tuesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Wednesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Thursday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Friday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Saturday:
+      open_time: "00:00"
+      close_time: "00:00"
+    Sunday:
+      open_time: "00:00"
+      close_time: "00:00"
+
+assets:
+  - symbol: DE40
+    open_day: 1
+    open_min: 545
+    close_day: 2
+    close_min: 1370
+    max_total_trades: 1
+    percent_of_capital: 50
+
+  - symbol: US30
+    open_day: 1
+    open_min: 65
+    close_day: 2
+    close_min: 1425
+    max_total_trades: 1
+    percent_of_capital: 50
+
+  - symbol: USTEC
+    open_day: 1
+    open_min: 65
+    close_day: 2
+    close_min: 1425
+    max_total_trades: 1
+    percent_of_capital: 50

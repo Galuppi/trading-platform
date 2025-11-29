@@ -1,0 +1,43 @@
+name: GoShort
+display_name: Go Short 1.0
+enabled: false
+total_strategy_capital: 100000
+positioning: capital
+holiday_calendar: us
+
+market_hours:
+  sessions:
+    Monday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Tuesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Wednesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Thursday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Friday:
+      open_time: "01:05"
+      close_time: "23:50"
+    Saturday:
+      open_time: "00:00"
+      close_time: "00:00"
+    Sunday:
+      open_time: "00:00"
+      close_time: "00:00"
+      
+assets:
+  - symbol: BTCUSD
+    open_min: 80
+    close_min: 1340
+    max_total_trades: 3
+    percent_of_capital: 10
+
+  - symbol: EURUSD
+    open_min: 680
+    close_min: 1340
+    max_total_trades: 3
+    percent_of_capital: 10

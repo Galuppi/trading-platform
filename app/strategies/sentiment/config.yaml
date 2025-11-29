@@ -1,0 +1,102 @@
+name: Sentiment
+display_name: Sentiment 1.0
+enabled: true
+total_strategy_capital: 100000
+positioning: risk
+holiday_calendar: us
+signal_feed: "C:\\Apps\\SignalProvider\\signals\\signal.json"
+
+market_hours:
+  sessions:
+    Monday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Tuesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Wednesday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Thursday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Friday:
+      open_time: "01:05"
+      close_time: "23:55"
+    Saturday:
+      open_time: "00:00"
+      close_time: "00:00"
+    Sunday:
+      open_time: "00:00"
+      close_time: "00:00"
+
+assets:
+  - symbol: US30
+    open_min: 65
+    close_min: 1380
+    risk_percent: 1.0
+    reward_risk_ratio: 2
+    signal_symbol: US30
+    signal_buy: 0.2
+    signal_sell: 0.1
+    max_total_trades: 100
+    max_buy_trades: 100
+    max_sell_trades: 100
+    trade_cooldown_minutes: 15
+    percent_of_capital: 2
+
+  - symbol: USTEC
+    open_min: 65
+    close_min: 1380
+    risk_percent: 1.0
+    reward_risk_ratio: 2
+    signal_symbol: US100
+    signal_buy: 0.2
+    signal_sell: 0.1
+    max_total_trades: 100
+    max_buy_trades: 100
+    max_sell_trades: 100
+    trade_cooldown_minutes: 15
+    percent_of_capital: 2
+
+  - symbol: BTCUSD
+    open_min: 65
+    close_min: 1380
+    risk_percent: 1.0
+    reward_risk_ratio: 2
+    signal_symbol: BTCUSD
+    signal_buy: 0.2
+    signal_sell: 0.1
+    max_total_trades: 100
+    max_buy_trades: 100
+    max_sell_trades: 100
+    trade_cooldown_minutes: 15
+    percent_of_capital: 2
+
+  - symbol: US500
+    open_min: 65
+    close_min: 1380
+    risk_percent: 1.0
+    reward_risk_ratio: 2  
+    signal_symbol: US500
+    signal_buy: 0.2
+    signal_sell: 0.1
+    max_total_trades: 100
+    max_buy_trades: 100
+    max_sell_trades: 100
+    trade_cooldown_minutes: 15
+    percent_of_capital: 2
+
+  - symbol: ETHUSD
+    open_min: 65
+    close_min: 1380
+    risk_percent: 1.0
+    reward_risk_ratio: 2
+    signal_symbol: ETHUSD
+    signal_buy: 0.2
+    signal_sell: 0.1
+    max_total_trades: 100
+    max_buy_trades: 100
+    max_sell_trades: 100
+    trade_cooldown_minutes: 15
+    percent_of_capital: 2
