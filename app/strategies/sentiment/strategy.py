@@ -89,7 +89,11 @@ class SentimentStrategy(Strategy):
                 last_closed_trade_exit_time = PlatformTime.parse_datetime_str(last_closed_trade.exit_time)
                 time_since_last_close = PlatformTime.now() - last_closed_trade_exit_time
                 if last_closed_trade_profit < 0.0 and time_since_last_close < PlatformTime.timedelta(minutes=240):
-                    return None
+                    return None     
+        price = self.symbol.get_ask_price(asset.symbol)
+        if self.state_manager.get_position_profit(asset.symbol, price) < -10.0:
+            logger.info(f"Skipping new trade for {asset.symbol} due to insufficient profit on existing position")
+            return None  
         self._load_signals()
         signal = self._get_signal(asset.signal_symbol)
         if self._is_buy_signal(signal, asset):

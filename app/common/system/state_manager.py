@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 from app.common.system.platform_time import PlatformTime
-from app.common.config.constants import DATETIME_FORMAT, TRADE_STATUS_OPEN, TRADE_STATUS_CLOSED
+from app.common.config.constants import DATETIME_FORMAT, TRADE_STATUS_OPEN, TRADE_STATUS_CLOSED,TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
 from app.common.models.model_trade import TradeRecord
 from app.common.models.model_account import StateBalances, DailyProfitSnapshot
 from app.base.base_account import Account
@@ -316,3 +316,28 @@ class StateManager:
             if t.id > latest.id:
                 latest = t
         return latest
+    
+    def get_position_profit(self, symbol: str, current_price: float) -> float:
+        """Perform the defined operation."""
+        total_profit: float = 0.0
+        open_trades: list[TradeRecord] = [
+            t for t in self.get_all_trades()
+            if t.symbol == symbol and t.status == TRADE_STATUS_OPEN
+        ]
+
+        for trade in open_trades:
+            if trade.entry_price is None or trade.lot_size is None:
+                continue
+
+            trade_type = trade.type.lower()
+
+            if trade_type == TRADE_DIRECTION_BUY:
+                profit: float = (current_price - trade.entry_price) * trade.lot_size
+            elif trade_type == TRADE_DIRECTION_SELL:
+                profit = (trade.entry_price - current_price) * trade.lot_size
+            else:
+                continue
+
+            total_profit += profit
+
+        return round(total_profit, 2)
