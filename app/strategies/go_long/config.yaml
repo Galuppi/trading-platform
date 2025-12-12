@@ -1,6 +1,6 @@
 name: GoLong
 display_name: Go Long 1.0
-enabled: true
+enabled: false
 total_strategy_capital: 100000
 positioning: capital
 holiday_calendar: us

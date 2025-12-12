@@ -1,12 +1,11 @@
-from typing import Any
-
 from dataclasses import dataclass
 from datetime import datetime
+
 
 @dataclass
 class SymbolInfo:
     symbol: str
-    time: datetime
+    time: datetime  # UTC timestamp
     ask_price: float
     bid_price: float
     open: float
@@ -15,12 +14,13 @@ class SymbolInfo:
     close: float
     lot_size: float
 
+
 @dataclass
 class Range:
     symbol: str
     high: float
     low: float
-    date: datetime
+    date: datetime  # platform-local timestamp
     range_set: bool = False
 
 @dataclass

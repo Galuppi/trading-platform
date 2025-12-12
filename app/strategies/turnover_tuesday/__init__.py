@@ -1,2 +1,1 @@
-from typing import Any
-
+# Automatically added to make this directory a Python package.

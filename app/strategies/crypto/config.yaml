@@ -1,6 +1,6 @@
 name: Crypto
 display_name: Crypto 1.3
-enabled: true
+enabled: false
 total_strategy_capital: 100000
 positioning: risk
 holiday_calendar: us

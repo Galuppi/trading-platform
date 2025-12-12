@@ -31,7 +31,7 @@ market_hours:
       close_time: "00:00"
 
 assets:
-  - symbol: US30
+  - symbol: US30.cash
     open_min: 65
     close_min: 1380
     risk_percent: 1.0
@@ -45,7 +45,7 @@ assets:
     trade_cooldown_minutes: 15
     percent_of_capital: 2
 
-  - symbol: USTEC
+  - symbol: US100.cash
     open_min: 65
     close_min: 1380
     risk_percent: 1.0
@@ -73,7 +73,7 @@ assets:
     trade_cooldown_minutes: 15
     percent_of_capital: 2
 
-  - symbol: US500
+  - symbol: US500.cash
     open_min: 65
     close_min: 1380
     risk_percent: 1.0

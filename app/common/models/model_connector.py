@@ -1,7 +1,6 @@
-from typing import Any
-
 from dataclasses import dataclass
 from typing import Optional
+
 
 @dataclass
 class ConnectorConfig:
@@ -17,3 +16,4 @@ class ConnectorConfig:
     client_id: Optional[str]
     client_secret: Optional[str]
     refresh_token: Optional[str]
+    

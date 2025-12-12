@@ -1,17 +1,19 @@
-from typing import Any
-
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Literal
+
 from app.common.config.constants import POSITIONING_CAPITAL
+
 
 @dataclass
 class MarketSession:
-    open_time: str
-    close_time: str
+    open_time: str  # Format: "HH:MM"
+    close_time: str  # Format: "HH:MM"
+
 
 @dataclass
 class MarketHours:
     sessions: Dict[str, MarketSession]
+
 
 @dataclass
 class AssetConfig:
@@ -34,6 +36,7 @@ class AssetConfig:
     trade_cooldown_minutes: Optional[int] = None
     reward_risk_ratio: Optional[float] = None
 
+
 @dataclass
 class StrategyConfig:
     name: str
@@ -49,14 +52,28 @@ class StrategyConfig:
     symbol_mapping_file: Optional[str] = None
 
     @classmethod
+    def from_dict(cls, data: dict) -> "StrategyConfig":
+        sessions_raw = data["market_hours"]["sessions"]
+        sessions = {
+            day: MarketSession(**session)
+            for day, session in sessions_raw.items()
+        }
 
-    def from_dict(cls: Any, data: dict) -> 'StrategyConfig':
-        """Perform the defined operation."""
-        sessions_raw = data['market_hours']['sessions']
-        sessions = {day: MarketSession(**session) for day, session in sessions_raw.items()}
-        market_hours = MarketHours(sessions=sessions)
-        assets = [AssetConfig(**asset) for asset in data['assets']]
-        return cls(name=data['name'], total_strategy_capital=data['total_strategy_capital'], percent_of_capital=data.get('percent_of_capital', 100), positioning=data.get('positioning', 'capital'), holiday_calendar=data['holiday_calendar'], market_hours=market_hours, assets=assets)
+        market_hours = MarketHours(
+            sessions=sessions
+        )
+
+        assets = [AssetConfig(**asset) for asset in data["assets"]]
+
+        return cls(
+            name=data["name"],
+            total_strategy_capital=data["total_strategy_capital"],
+            percent_of_capital=data.get("percent_of_capital", 100),
+            positioning=data.get("positioning", "capital"),
+            holiday_calendar=data["holiday_calendar"],
+            market_hours=market_hours,
+            assets=assets
+        )
 
 @dataclass
 class SentimentSignal:

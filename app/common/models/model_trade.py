@@ -1,5 +1,3 @@
-from typing import Any
-
 from dataclasses import dataclass
 from typing import Optional
 
@@ -20,7 +18,7 @@ class TradeResult:
     close_price: Optional[float] = None
     profit: float = 0.0
     closed: bool = True
-    comment: Optional[str] = ''
+    comment: Optional[str] = ""
     request: Optional[dict] = None
     price: Optional[float] = None
 
@@ -71,9 +69,9 @@ class OrderRequest:
     take_profit: Optional[float] = None
     risk_percent: Optional[float] = None
     reward_risk_ratio: Optional[float] = None
-    comment: Optional[str] = ''
+    comment: Optional[str] = ""
     price: Optional[float] = None
-    strategy_name: Optional[str] = ''
+    strategy_name: Optional[str] = ""
 
 @dataclass
 class ProfitResult:
