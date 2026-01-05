@@ -23,9 +23,12 @@ class TurnoverTuesdayStrategy(Strategy):
                 )
 
     def is_entry_signal(self, asset: AssetConfig) -> str | None:
+        if self.state_manager.get_target_reached():
+            return None
+
         if self.has_reached_max_trades(asset):
             return None
-        
+         
         if not PlatformTime.is_matching_weekday(asset.open_day or 2):
             return None
 
@@ -36,9 +39,12 @@ class TurnoverTuesdayStrategy(Strategy):
         return None
 
     def is_exit_signal(self, trade: TradeRecord) -> bool:
+        if self.state_manager.get_target_reached():
+            return True
+
         if trade.strategy != self.strategy_name:
             return False
-
+            
         for asset in self.assets:
             if asset.symbol == trade.symbol:
                 if not PlatformTime.is_matching_weekday(asset.close_day or 3):

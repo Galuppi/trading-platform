@@ -16,10 +16,15 @@ class DailyProfitSnapshot:
     timestamp: str
     equity: float
     balance: float
+    begin_balance: float
     profit: float
+    target_reached: bool = False
+    break_even_reached: bool = False
 
-@dataclass(frozen=True, slots=True)
-class StateBalances:
-    balance: float
-    equity: float
-    profit: float
+@dataclass
+class AccountRisk:
+    account_risk_enabled: bool
+    account_stop_loss: float
+    account_take_profit: float
+    account_break_even: float
+    account_profit_level: float

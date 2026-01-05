@@ -18,7 +18,7 @@ class EngineTester(BaseEngine):
         self.backtester_config = backtester_config
 
     # temp
-    def _update_profit_if_due(self, timestamp, last_update_timestamp):
+    def _update_daily_balances_if_due(self, timestamp, last_update_timestamp):
         pass
 
     def run(self):
@@ -33,7 +33,7 @@ class EngineTester(BaseEngine):
 
         self.initialize()
 
-        last_profit_update = 0
+        last_balances_update = 0
 
         self.summary_writer.mark_wall_start()
 
@@ -42,7 +42,7 @@ class EngineTester(BaseEngine):
 
             self._run_strategies()
 
-            last_profit_update = self._update_profit_if_due(current_timestamp, last_profit_update)
+            last_balances_update = self._update_daily_balances_if_due(current_timestamp, last_balances_update)
 
             if i % 720 == 0:
                 self.summary_writer.save()

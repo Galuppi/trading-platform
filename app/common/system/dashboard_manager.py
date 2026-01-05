@@ -53,16 +53,13 @@ class DashboardManager:
         <div class="container">
             <h1>Trading System Status</h1>
             <div class="meta">Mode: {mode} • {date} • Local: {local_time} • Platform: {platform_time} • UTC: {utc_time}</div>
-            <div class="section">
-                <h3>Balances</h3>
-                {balances_html}
-            </div>
+            {balances_html}
             <div class="section">
                 <h3>Strategies</h3>
                 {strategies_html}
             </div>
             <div class="section">
-                <h3>Last Event</h3>
+                <h3>Scheduled event</h3>
                 {last_event_html}
             </div>
             <div class="footer">Last updated: {timestamp}</div>
@@ -75,7 +72,8 @@ class DashboardManager:
         self._browser_opened = False
 
     def _clear_terminal(self) -> None:
-        print("\033c", end="")
+        print("\033[2J\033[H", end="", flush=True)
+        os.system('cls' if os.name == 'nt' else 'clear')
 
     def _open_browser_once(self) -> None:
         if not self._browser_opened:
@@ -128,7 +126,7 @@ class DashboardManager:
             <div class="item"><span class="label">Time:</span> {last_event.time}</div>
             """
         else:
-            last_event_html = "<div class='item'>No recent event</div>"
+            last_event_html = "<div class='item'>No event</div>"
 
         if mode == MODE_BACKTEST:
             balances_html = self._build_backtest_balances(backtester_config, summary_writer)
@@ -155,11 +153,20 @@ class DashboardManager:
             balance_info = summary_writer.get_balance_info(initial_deposit=initial_deposit)
             balance_str = f"{balance_info['balance']:.2f}"
             profit = balance_info["profit"]
+            target_reached = balance_info.get("target_reached", False)
+            target_reached_str = "Yes" if target_reached else "No"
             profit_class = "profit-neg" if profit < 0 else "profit-pos"
             profit_html = f"<span class='{profit_class}'>{profit:+.2f}</span>"
             return f"""
-            <div class="item"><span class="label">Balance:</span> {balance_str}</div>
-            <div class="item"><span class="label">Profit:</span> {profit_html}</div>"""
+            <div class="section">
+                <h3>Balances</h3>
+                <div class="item"><span class="label">Balance:</span> {balance_str}</div>
+            </div>
+            <div class="section">
+                <h3>Daily performance</h3>
+                <div class="item"><span class="label">Profit:</span> {profit_html}</div>
+                <div class="item"><span class="label">Target reached:</span> {target_reached_str}</div>
+            </div>"""
         except Exception as exc:
             return f"<div class='warning'>[ERROR] Backtest: {exc}</div>"
 
@@ -168,15 +175,25 @@ class DashboardManager:
             balance_state = state_manager.get_state_balances()
             equity_str = f"{balance_state.equity:.2f}"
             balance_str = f"{balance_state.balance:.2f}"
+            begin_balance_str = f"{balance_state.begin_balance:.2f}"
             profit = balance_state.profit
+            target_reached = "Yes" if balance_state.target_reached else "No"
             profit_class = "profit-neg" if profit < 0 else "profit-pos"
             profit_html = f"<span class='{profit_class}'>{profit:+.2f}</span>"
             return f"""
-            <div class="item"><span class="label">Equity:</span> {equity_str}</div>
-            <div class="item"><span class="label">Balance:</span> {balance_str}</div>
-            <div class="item"><span class="label">Profit:</span> {profit_html}</div>"""
+            <div class="section">
+                <h3>Balances</h3>
+                <div class="item"><span class="label">Balance:</span> {balance_str}</div>
+                <div class="item"><span class="label">Equity:</span> {equity_str}</div>
+            </div>
+            <div class="section">
+                <h3>Daily performance</h3>
+                <div class="item"><span class="label">Begin balance:</span> {begin_balance_str}</div>
+                <div class="item"><span class="label">Profit:</span> {profit_html}</div>
+                <div class="item"><span class="label">Target reached:</span> {target_reached}</div>
+            </div>"""
         except Exception as exc:
-            return f"<div class='warning'>[ERROR] Live balance: {exc}"
+            return f"<div class='warning'>[ERROR] Live balance: {exc}</div>"
 
     def _write_dashboard(self, html_content: str) -> None:
         try:

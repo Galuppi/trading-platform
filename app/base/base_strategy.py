@@ -13,6 +13,7 @@ from app.common.models.model_trade import TradeRecord, OrderRequest
 from app.common.system.platform_time import PlatformTime
 from app.common.system.state_manager import StateManager
 from app.common.system.news_manager import NewsManager
+from app.common.system.risk_manager import RiskManager
 from app.common.config.constants import (
     TRADE_DIRECTION_BUY,
     TRADE_DIRECTION_SELL,
@@ -37,6 +38,7 @@ class Strategy(ABC):
         self.calculator: Optional[Calculator] = None
         self.state_manager:Optional[StateManager] = None
         self.news_manager: Optional[NewsManager] = None
+        self.risk_manager: Optional[RiskManager] = None
 
     def attach_services(
         self,
@@ -48,6 +50,7 @@ class Strategy(ABC):
         calculator: Calculator,
         state_manager: StateManager,
         news_manager: NewsManager,
+        risk_manager: RiskManager,
     ):
         """Attach external services required for strategy execution."""
         self.connector = connector
@@ -57,6 +60,7 @@ class Strategy(ABC):
         self.calculator = calculator
         self.state_manager = state_manager
         self.news_manager = news_manager
+        self.risk_manager = risk_manager
 
     def set_holidays(self, holidays: list[str]):
         """Set the list of holiday dates (ISO format) to avoid trading."""
@@ -93,7 +97,7 @@ class Strategy(ABC):
         """Return True if a new trade is allowed under strategy and asset constraints."""
         if self.is_holiday() or not self.is_market_open():
             return False
-
+        
         direction = order.direction
         today = PlatformTime.now().date()
 
@@ -180,7 +184,6 @@ class Strategy(ABC):
         changed = self.trade.modify_position(trade)
         if changed:
             self.state_manager.add_trade(trade)
-
 
     def finalize(self):
         """Hook for cleanup or final adjustments before shutdown."""

@@ -1,0 +1,6 @@
+risk:
+  enabled: true
+  account_stop_loss: -200
+  account_take_profit: 300
+  account_break_even: 180
+  account_profit_level: 100

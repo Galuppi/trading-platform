@@ -146,6 +146,7 @@ class Calculator(ABC):
                 return 0.0
 
             stop_loss_points = stop_distance / tick_size
+            stop_loss_points_int = int(round(stop_loss_points))
 
         else:
             risk_percent = order.risk_percent or 0.0

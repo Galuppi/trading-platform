@@ -1,6 +1,6 @@
 name: Sentiment
 display_name: Sentiment 1.0
-enabled: true
+enabled: false
 total_strategy_capital: 100000
 positioning: risk
 holiday_calendar: us

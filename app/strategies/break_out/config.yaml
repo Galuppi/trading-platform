@@ -48,6 +48,7 @@ assets:
     range_open_min: 180
     range_close_min: 360
     range_stop_loss: true
+    range_size_restricted: true
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
@@ -60,6 +61,7 @@ assets:
     range_open_min: 815
     range_close_min: 965
     range_stop_loss: false
+    range_size_restricted: true
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
@@ -72,6 +74,7 @@ assets:
     range_open_min: 200
     range_close_min: 690
     range_stop_loss: true
+    range_size_restricted: true
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
@@ -84,6 +87,7 @@ assets:
     range_open_min: 60
     range_close_min: 120
     range_stop_loss: false
+    range_size_restricted: true
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
@@ -96,6 +100,7 @@ assets:
     range_open_min: 635
     range_close_min: 785
     range_stop_loss: false
+    range_size_restricted: true
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1

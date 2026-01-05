@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union, Any
 from app.common.system.platform_time import PlatformTime
 from app.common.config.constants import DATETIME_FORMAT, TRADE_STATUS_OPEN, TRADE_STATUS_CLOSED, TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
 from app.common.models.model_trade import TradeRecord
-from app.common.models.model_account import StateBalances, DailyProfitSnapshot
+from app.common.models.model_account import DailyProfitSnapshot
 from app.base.base_account import Account
 from app.common.models.model_news import FaireconomyEvent
 
@@ -212,21 +212,120 @@ class StateManager:
         self._cache.pop("_last_event", None)
         self.save()
 
-    def update_daily_profit(self, equity: float, balance: float) -> None:
+    def save_daily_balances(self, equity: float, balance: float, target_reached: bool, break_even_reached: bool) -> None:
+        snapshot_data = self.state.get("_daily_profit")
+
+        if not snapshot_data:
+            begin_balance = round(balance, 2)
+            profit = 0.0
+            target_reached = False
+            break_even_reached = False
+        else:
+            begin_balance = snapshot_data["begin_balance"]
+            profit = round(equity - begin_balance, 2)
+            target_reached = target_reached
+            break_even_reached = break_even_reached
+            
         snapshot = DailyProfitSnapshot(
             timestamp=PlatformTime.datetime_str(),
             equity=equity,
             balance=balance,
-            profit=round(equity - balance, 2),
+            begin_balance=begin_balance,
+            profit=profit,
+            target_reached=target_reached,
+            break_even_reached=break_even_reached,
+        )
+
+        self.state["_daily_profit"] = asdict(snapshot)
+        self.save()
+
+    def save_begin_balances(self) -> None:
+        snapshot_data = self.state.get("_daily_profit")
+        if not snapshot_data:
+            return
+
+        balance = snapshot_data["balance"]
+        equity = snapshot_data["equity"]
+        snapshot = DailyProfitSnapshot(
+            timestamp=PlatformTime.datetime_str(),
+            begin_balance=round(balance, 2),
+            equity=equity,
+            balance=balance,
+            profit=0.0,
+            target_reached=False,
+            break_even_reached=False,
         )
         self.state["_daily_profit"] = asdict(snapshot)
         self.save()
 
-    def get_state_balances(self) -> StateBalances:
-        balance = round(self.account.get_balance(), 2)
-        equity = round(self.account.get_equity(), 2)
-        profit = round(equity - balance, 2)
-        return StateBalances(balance=balance, equity=equity, profit=profit)
+    def reset_target_reached(self) -> None:
+        snapshot_data = self.state.get("_daily_profit")
+        if not snapshot_data:
+            return
+
+        snapshot = DailyProfitSnapshot(
+            timestamp=snapshot_data.get("timestamp", PlatformTime.datetime_str()),
+            begin_balance=round(snapshot_data.get("begin_balance", snapshot_data.get("balance", 0.0)), 2),
+            equity=snapshot_data.get("equity", 0.0),
+            balance=snapshot_data.get("balance", 0.0),
+            profit=snapshot_data.get("profit", 0.0),
+            target_reached=False, 
+            break_even_reached=snapshot_data.get("break_even_reached", False),
+        )
+
+        self.state["_daily_profit"] = asdict(snapshot)
+        self.save()
+
+    def get_begin_balance(self) -> float:
+        snapshot = self.state.get("_daily_profit")
+        if snapshot and isinstance(snapshot, dict):
+            return snapshot.get("begin_balance", 0.0)
+        return 0.0
+
+    def get_daily_profit(self) -> float:
+        snapshot = self.state.get("_daily_profit")
+        if snapshot and isinstance(snapshot, dict):
+            return snapshot.get("profit", 0.0)
+        return 0.0
+
+    def get_target_reached(self) -> bool:
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")      
+        if snapshot_data is None:
+            return False     
+        return snapshot_data.get("target_reached", False)
+    
+    def get_break_even_reached(self) -> bool:
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")      
+        if snapshot_data is None:
+            return False     
+        return snapshot_data.get("break_even_reached", False)
+    
+    def get_state_balances(self) -> DailyProfitSnapshot:
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")     
+        if snapshot_data is not None:
+            begin_balance = round(snapshot_data["begin_balance"], 2)
+            balance = round(snapshot_data["balance"], 2)
+            equity = round(snapshot_data["equity"], 2)
+            profit = round(snapshot_data["profit"], 2)
+            target_reached = snapshot_data.get("target_reached", False)
+            break_even_reached = snapshot_data.get("break_even_reached", False) 
+        else:
+            begin_balance = round(self.account.get_balance(), 2)
+            balance = round(self.account.get_balance(), 2)
+            equity = round(self.account.get_equity(), 2)
+            profit = round(equity - balance, 2)
+            target_reached = False
+            break_even_reached = False
+        
+        return DailyProfitSnapshot(
+            timestamp=PlatformTime.datetime_str(),
+            begin_balance=begin_balance,
+            balance=balance,
+            equity=equity,
+            profit=profit,
+            target_reached=target_reached,
+            break_even_reached=break_even_reached,
+        )
 
     def get_open_trades(
         self,
@@ -340,7 +439,7 @@ class StateManager:
 
         return latest
     
-    def get_position_profit(self, symbol: str, current_price: float) -> float:
+    def get_position_profit(self, symbol: str, current_price: float, contract_size: float) -> float:
         total_profit: float = 0.0
         open_trades: list[TradeRecord] = [
             t for t in self.get_all_trades()
@@ -354,9 +453,9 @@ class StateManager:
             trade_type = trade.type.lower()
 
             if trade_type == TRADE_DIRECTION_BUY:
-                profit: float = (current_price - trade.entry_price) * trade.lot_size
+                profit: float = (current_price - trade.entry_price) * trade.lot_size * contract_size
             elif trade_type == TRADE_DIRECTION_SELL:
-                profit = (trade.entry_price - current_price) * trade.lot_size
+                profit = (trade.entry_price - current_price) * trade.lot_size * contract_size
             else:
                 continue
 

@@ -35,6 +35,7 @@ class AssetConfig:
     signal_symbol: Optional[str] = None
     trade_cooldown_minutes: Optional[int] = None
     reward_risk_ratio: Optional[float] = None
+    range_size_restricted: Optional[bool] = None
 
 
 @dataclass

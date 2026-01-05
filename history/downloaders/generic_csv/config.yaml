@@ -37,22 +37,17 @@ assets:
     date_from: 01-01-2023
     date_to: 31-12-2025
 
-  - symbol: USTEC
-    timeframe: H1
-    date_from: 01-01-2023
-    date_to: 31-12-2025
-
-    symbol: BTCUSD
-    timeframe: H1
+  - symbol: BTCUSD
+    timeframe: M1
     date_from: 01-01-2025
     date_to: 31-12-2025
 
-    symbol: XRPUSD
-    timeframe: H1
+  - symbol: XRPUSD
+    timeframe: M1
     date_from: 01-01-2025
     date_to: 31-12-2025
 
-    symbol: ETHUSD
-    timeframe: H1
+  - symbol: ETHUSD
+    timeframe: M1
     date_from: 01-01-2023
     date_to: 31-12-2025

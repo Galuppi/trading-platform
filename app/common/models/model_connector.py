@@ -11,6 +11,7 @@ class ConnectorConfig:
     offset: int
     login: Optional[int]
     password: Optional[str]
+    terminal_path: Optional[str]
     api_key: Optional[str]
     account_id: Optional[str]
     client_id: Optional[str]

@@ -25,6 +25,7 @@ from app.loaders.loader_state_manager import load_state_manager
 from app.loaders.loader_backtest_summary import load_backtest_summary
 from app.loaders.loader_dashboard_manager import load_dashboard_manager
 from app.loaders.loader_news_manager import load_news_manager
+from app.loaders.loader_risk_manager import load_risk_manager
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,8 @@ if __name__ == "__main__":
     state_manager = load_state_manager(account, connector_config, backtester_config)
     summary_writer = load_backtest_summary(backtester_config)
     dashboard = load_dashboard_manager()
-    news_manager = load_news_manager(window_minutes=60)
+    news_manager = load_news_manager(window_minutes=15)
+    risk_manager = load_risk_manager()
 
     connector = get_connector(platform_name, connector_config)
     if not connector.connect():
@@ -69,6 +71,7 @@ if __name__ == "__main__":
         calculator=calculator,
         state_manager=state_manager,
         news_manager=news_manager,
+        risk_manager=risk_manager,
     )
 
     if is_backtest:
@@ -96,6 +99,7 @@ if __name__ == "__main__":
             backtester_config=backtester_config,
             dashboard_manager=dashboard,
             news_manager=news_manager,
+            risk_manager=risk_manager,
         )
 
     try:

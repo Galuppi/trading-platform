@@ -26,45 +26,6 @@ class SentimentStrategy(Strategy):
                 raise ValueError(f"Symbol '{asset.symbol}' not available or not visible in Market Watch")
         self._load_signals()
 
-    def _load_signals_old(self) -> None:
-        try:
-            signal_feed_path: Path = Path(self.config.signal_feed)
-            if not signal_feed_path.exists():
-                return
-
-            file_modified_time: float = signal_feed_path.stat().st_mtime
-            if self.last_load and file_modified_time == self.last_load:
-                return
-
-            with open(signal_feed_path, "r", encoding="utf-8") as json_file:
-                signal_payload: Dict[str, List[Dict[str, object]]] = json.load(json_file)
-
-            parsed_signals: List[SentimentSignal] = []
-            for signal_entry in signal_payload.get("signals", []):
-                try:
-                    sentiment_signal = SentimentSignal(
-                        symbol=signal_entry.get("symbol"),
-                        category=signal_entry.get("category"),
-                        sma24=signal_entry.get("sma24"),
-                        sma4=signal_entry.get("sma4"),
-                        sma1=signal_entry.get("sma1"),
-                        price=signal_entry.get("price"),
-                        countsma24=signal_entry.get("countsma24"),
-                        countsma4=signal_entry.get("countsma4"),
-                        countsma1=signal_entry.get("countsma1"),
-                        timestamp=signal_entry.get("timestamp"),
-                    )
-                    parsed_signals.append(sentiment_signal)
-                except Exception as error:
-                    logger.warning(f"Invalid signal entry skipped: {error}")
-
-            self.signals = {signal.symbol: signal for signal in parsed_signals if signal.symbol}
-            self.last_load = file_modified_time
-
-        except Exception as error:
-            logger.error(f"Failed to load signal file: {error}")
-            self.signals = {}
-
     def _get_signal(self, signal_symbol: str) -> Optional[SentimentSignal]:
         return self.signals.get(signal_symbol)
 
@@ -81,7 +42,9 @@ class SentimentStrategy(Strategy):
         return signal.sma24 < asset.signal_sell and signal.sma4 < asset.signal_sell and signal.sma1 < asset.signal_sell
 
     def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
-
+        if self.state_manager.get_target_reached():
+            return None
+        
         event = self.news_manager.get_releasing_event(asset.symbol)
         if event and event.timestamp != self.last_logged_event_ts:
             self.state_manager.save_last_event(event)
@@ -106,7 +69,8 @@ class SentimentStrategy(Strategy):
                 return None
 
         price = self.symbol.get_ask_price(asset.symbol)
-        if self.state_manager.get_position_profit(asset.symbol, price) < -10.0:
+        contract_size = self.symbol.get_contract_size(asset.symbol)
+        if self.state_manager.get_position_profit(asset.symbol, price, contract_size) < -10.0:
             logger.info(f"Skipping new trade for {asset.symbol} due to insufficient profit on existing position")
             return None
 
@@ -116,15 +80,16 @@ class SentimentStrategy(Strategy):
                 logger.warning( f"Last closed trade ({last_closed_trade.id}) has no exit_time — skipping cooldown check")
             else:
                 current_price = price
+                contract_size = self.symbol.get_contract_size(asset.symbol)
                 position_profit = self.state_manager.get_position_profit(
-                    asset.symbol, current_price
+                    asset.symbol, current_price, contract_size
                 )
                 if position_profit <= 0:
                     exit_time = PlatformTime.parse_datetime_str(last_closed_trade.exit_time)
                     time_since_close = PlatformTime.now() - exit_time
                     if time_since_close < PlatformTime.timedelta(minutes=240):
                         return None
-
+                    
         self._load_signals()
         signal = self._get_signal(asset.signal_symbol)
 
@@ -135,8 +100,12 @@ class SentimentStrategy(Strategy):
         return None
 
     def is_exit_signal(self, trade: TradeRecord) -> bool:
+        if self.state_manager.get_target_reached():
+            return True
+
         if trade.strategy != self.strategy_name:
             return False
+                
         for asset in self.assets:
             if asset.symbol == trade.symbol:
                 return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0) or self.news_manager.is_releasing_news(asset.symbol)

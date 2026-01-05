@@ -18,6 +18,7 @@ def load_connector_config() -> ConnectorConfig:
         offset=int(os.getenv("PLATFORM_TIME_OFFSET", "0")),
         login=int(os.getenv("ACCOUNT_LOGIN", "0")),
         password=os.getenv("ACCOUNT_PASSWORD"),
+        terminal_path=os.getenv("ACCOUNT_TERMINAL_PATH"),
         api_key=os.getenv("PLATFORM_API_KEY"),
         account_id=os.getenv("PLATFORM_ACCOUNT_ID"),
         client_id=os.getenv("PLATFORM_CLIENT_ID"),

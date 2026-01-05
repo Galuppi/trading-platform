@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class BaseEngine(ABC):
 
-    def __init__(self, account, strategies, state_manager, connector_config, backtester_config, dashboard_manager=None, news_manager=None,):
+    def __init__(self, account, strategies, state_manager, connector_config, backtester_config, dashboard_manager=None, news_manager=None, risk_manager=None):
         """Initialize the engine with a list of strategies and a state manager."""
         self.account = account
         self.strategies = strategies
@@ -20,7 +20,7 @@ class BaseEngine(ABC):
         self.today = PlatformTime.now().day
         self.dashboard_manager = dashboard_manager
         self.news_manager = news_manager
-
+        self.risk_manager = risk_manager
 
     def initialize(self):
         """Call the initialize method on all strategies."""
@@ -38,6 +38,8 @@ class BaseEngine(ABC):
     def _run_strategies(self):
         if self.today != PlatformTime.now().day:
             self.state_manager.clean_last_event()
+            self.state_manager.save_begin_balances()
+            self.risk_manager.initialize()
             setup_logger(LOG_PATH, self.connector_config.mode)       
 
         for strategy in self.strategies:
@@ -98,27 +100,47 @@ class BaseEngine(ABC):
 
         self.today = PlatformTime.now().day
 
-    def _update_profit_if_due(self, timestamp, last_update_timestamp):
+    def _update_daily_balances_if_due(self, timestamp, last_update_timestamp):
         """Update daily profit if the interval has elapsed since last update."""
-        if timestamp - last_update_timestamp >= 300:
-            for strategy in self.strategies:
-                try:
-                    equity = strategy.account.get_equity()
-                    balance = strategy.account.get_balance()
-                    self.state_manager.update_daily_profit(equity, balance)
-                except Exception as error:
-                    logger.warning(f"Failed to update profit for {strategy.strategy_name}: {error}")
-            return timestamp
-        return last_update_timestamp
+        if timestamp - last_update_timestamp < 60:
+            return last_update_timestamp
 
-    def _refresh_calendar_if_due(self, timestamp, last_news_refresh_timestamp):
-        if timestamp - last_news_refresh_timestamp >= 86400:
+        try:
+            risk_manager = self.risk_manager
+            account_take_profit = risk_manager.get_account_take_profit() if risk_manager else 0
+            account_stop_loss = risk_manager.get_account_stop_loss() if risk_manager else 0
+            account_break_even = risk_manager.get_account_break_even() if risk_manager else 0
+            account_risk_enabled = risk_manager.get_account_risk_enabled() if risk_manager else False
+            begin_balance = self.state_manager.get_begin_balance()
+            equity = self.account.get_equity()
+            balance = self.account.get_balance()
+
+            break_even_reached = self.state_manager.get_break_even_reached()
+            account_profit_level = self.risk_manager.get_account_profit_level() 
+            if break_even_reached is False and begin_balance > 0:
+                break_even_reached = equity - begin_balance >= account_break_even if account_risk_enabled else False  
+                if break_even_reached:
+                    self.risk_manager.update_account_stop_loss(account_profit_level) 
+                    logger.info("Break-even level reached. Adjusting account stop loss.") 
+
+            take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled else False
+            stop_loss_reached = equity - begin_balance  <= account_stop_loss if account_risk_enabled else False          
+            target_reached = take_profit_reached or stop_loss_reached
+
+            self.state_manager.save_daily_balances(equity, balance, target_reached, break_even_reached)
+        except Exception as error:
+            logger.warning(f"Failed to update profit: {error}")
+
+        return timestamp
+
+    def _refresh_calendar_if_due(self, timestamp, last_news_refresh_update):
+        if timestamp - last_news_refresh_update >= 86400:
             try:
                 self.news_manager.refresh()
             except Exception as error:
                 logger.warning(f"Failed to refresh calendar: {error}")
             return timestamp
-        return last_news_refresh_timestamp
+        return last_news_refresh_update
 
     @abstractmethod
     def run(self):

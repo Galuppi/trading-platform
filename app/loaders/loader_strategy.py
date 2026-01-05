@@ -78,6 +78,7 @@ def strategy_registry(
     calculator,
     state_manager,
     news_manager,
+    risk_manager,
 ) -> list:
     strategies = []
 
@@ -105,6 +106,7 @@ def strategy_registry(
                 calculator=calculator,
                 state_manager=state_manager,
                 news_manager=news_manager,
+                risk_manager=risk_manager,
             )
             
             holidays = load_holiday_calendar(config.holiday_calendar)

@@ -65,11 +65,12 @@ class BreakOutStrategy(Strategy):
                 )
 
     def is_entry_signal(self, asset: AssetConfig) -> str | None:
+        if self.state_manager.get_target_reached():
+            return None
         if self.has_reached_max_trades(asset):
             return None
 
         now_min = PlatformTime.minutes_since_midnight()
-
         if now_min < (asset.open_min or 0):
             return None
 
@@ -78,17 +79,31 @@ class BreakOutStrategy(Strategy):
             return None
 
         price = self.symbol.get_ask_price(asset.symbol)
+        if price <= 0:
+            return None
+
+        if asset.range_size_restricted is not None and asset.range_size_restricted:
+            range_size_monetary = range_.high - range_.low
+            min_allowed_range = 0.001 * price
+            max_allowed_range = 0.008 * price
+            if not (min_allowed_range <= range_size_monetary <= max_allowed_range):
+                #debug
+                #logger.info(f"Range size for {asset.symbol} is out of allowed bounds: {range_size_monetary:.5f} (allowed: {min_allowed_range:.5f} - {max_allowed_range:.5f})") 
+                return None
 
         if price > range_.high:
             return TRADE_DIRECTION_BUY
         elif price < range_.low:
             return TRADE_DIRECTION_SELL
-
         return None
 
     def is_exit_signal(self, trade: TradeRecord) -> bool:
+        if self.state_manager.get_target_reached():
+            return True
+        
         if trade.strategy != self.strategy_name:
             return False
+         
         for asset in self.assets:
             if asset.symbol == trade.symbol:
                 return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0)

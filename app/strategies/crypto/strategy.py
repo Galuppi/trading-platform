@@ -65,6 +65,8 @@ class CryptoStrategy(Strategy):
                 )
 
     def is_entry_signal(self, asset: AssetConfig) -> str | None:
+        if self.state_manager.get_target_reached():
+            return None
 
         event = self.news_manager.get_releasing_event(asset.symbol)
         if event and event.timestamp != self.last_logged_event_ts:
@@ -90,7 +92,8 @@ class CryptoStrategy(Strategy):
                 return None
 
         price = self.symbol.get_ask_price(asset.symbol)
-        if self.state_manager.get_position_profit(asset.symbol, price) < -10.0:
+        contract_size = self.symbol.get_contract_size(asset.symbol)
+        if self.state_manager.get_position_profit(asset.symbol, price, contract_size) < -10.0:
             logger.info(f"Skipping new trade for {asset.symbol} due to insufficient profit on existing position")
             return None
     
@@ -100,8 +103,9 @@ class CryptoStrategy(Strategy):
                 logger.warning( f"Last closed trade ({last_closed_trade.id}) has no exit_time — skipping cooldown check")
             else:
                 current_price = price
+                contract_size = self.symbol.get_contract_size(asset.symbol)
                 position_profit = self.state_manager.get_position_profit(
-                    asset.symbol, current_price
+                    asset.symbol, current_price, contract_size
                 )
                 if position_profit <= 0:
                     exit_time = PlatformTime.parse_datetime_str(last_closed_trade.exit_time)
@@ -115,6 +119,15 @@ class CryptoStrategy(Strategy):
 
         price = self.symbol.get_ask_price(asset.symbol)
 
+        if asset.range_size_restricted is not None and asset.range_size_restricted:
+            range_size_monetary = range_.high - range_.low
+            min_allowed_range = 0.001 * price
+            max_allowed_range = 0.010 * price
+            if not (min_allowed_range <= range_size_monetary <= max_allowed_range):
+                #debug
+                #logger.info(f"Range size for {asset.symbol} is out of allowed bounds: {range_size_monetary:.2f} (allowed: {min_allowed_range:.2f} - {max_allowed_range:.2f})") 
+                return None
+
         if price > range_.high:
             return TRADE_DIRECTION_BUY
         elif price < range_.low:
@@ -123,8 +136,12 @@ class CryptoStrategy(Strategy):
         return None
 
     def is_exit_signal(self, trade: TradeRecord) -> bool:
+        if self.state_manager.get_target_reached():
+            return True
+
         if trade.strategy != self.strategy_name:
             return False
+    
         for asset in self.assets:
             if asset.symbol == trade.symbol:
                 return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0) or self.news_manager.is_releasing_news(asset.symbol)

@@ -6,11 +6,11 @@ ROOT_WWW = Path(r"C:\inetpub\wwwroot")
 
 #app directories and files
 APP_DIR = ROOT_DIR / "app"
-CONFIG_PATH = APP_DIR / "config" / "config.yaml"
+STRATEGY_PATH = APP_DIR / "strategies"
 STATE_PATH = APP_DIR / "runtime" / "state" / "state.json"
 LOG_PATH = APP_DIR / "runtime" / "logs"
-STRATEGY_PATH = APP_DIR / "strategies"
 HOLIDAY_PATH = APP_DIR / "common" / "holidays" / "holidays_{}.yaml"
+ACCOUNT_RISK_PATH = APP_DIR / "common" / "config" / "account_risk.yaml"
 
 #dashboard files
 DASHBOARD_PATH = ROOT_WWW / "status_dashboard.html"
