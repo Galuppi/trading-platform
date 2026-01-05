@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 
 class BaseEngine(ABC):
 
-    def __init__(self, account, strategies, state_manager, connector_config, backtester_config, dashboard_manager=None, news_manager=None, risk_manager=None):
+    def __init__(self, connector, account, strategies, state_manager, connector_config, backtester_config, dashboard_manager=None, news_manager=None, risk_manager=None):
         """Initialize the engine with a list of strategies and a state manager."""
+        self.connector = connector
         self.account = account
         self.strategies = strategies
         self.state_manager = state_manager

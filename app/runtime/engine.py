@@ -20,6 +20,8 @@ class Engine(BaseEngine):
 
         try:
             while True:
+                self.connector.connection_check()
+                
                 current_timestamp = PlatformTime.timestamp()
 
                 last_tick_timestamp = self.state_manager.get_server_last_tick()

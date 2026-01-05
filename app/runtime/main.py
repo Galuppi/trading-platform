@@ -81,6 +81,7 @@ if __name__ == "__main__":
             PlatformTime.set_backtest_timestamp(timestamps.values[0])
 
         app = EngineTester(
+            connector=connector,
             account=account,
             strategies=strategies,
             state_manager=state_manager,
@@ -92,6 +93,7 @@ if __name__ == "__main__":
         )
     else:
         app = Engine(
+            connector=connector,
             account=account,
             strategies=strategies,
             state_manager=state_manager,

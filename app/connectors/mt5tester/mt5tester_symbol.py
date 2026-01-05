@@ -44,8 +44,8 @@ class Mt5testerSymbol(Symbol):
                     self.data_by_symbol[symbol] = combined_df
 
     def preload_symbol_info(self):
-        if not mt5.initialize():
-            raise RuntimeError(f"Failed to initialize MT5: {mt5.last_error()}")
+       #if not mt5.initialize():
+       #     raise RuntimeError(f"Failed to initialize MT5: {mt5.last_error()}")
 
         for symbol in self.data_by_symbol.keys():
             info = mt5.symbol_info(symbol)

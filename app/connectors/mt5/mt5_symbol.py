@@ -110,8 +110,8 @@ class Mt5Symbol(Symbol):
         end_minute: int,
         timeframe: str = TIMEFRAME_M1,
     ) -> Range:
-        if not mt5.initialize():
-            raise RuntimeError("MT5 initialization failed")
+        #if not mt5.initialize():
+        #    raise RuntimeError("MT5 initialization failed")
 
         now = PlatformTime.now()
         start_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + PlatformTime.timedelta(minutes=start_minute)

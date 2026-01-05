@@ -2,6 +2,7 @@ import MetaTrader5 as mt5
 import logging
 from app.base.base_connector import Connector
 from app.common.models.model_connector import ConnectorConfig
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +51,16 @@ class Mt5Connector(Connector):
         )
         
         return True
+        
+    def connection_check(self) -> bool:
+        """Checks if the MT5 connection is still valid."""
+        terminal_info = mt5.terminal_info()
+        if terminal_info:
+            confirmed_path = Path(terminal_info.path).resolve()
+            config_path = Path(self.config.terminal_path).parent.resolve()
+
+            if confirmed_path == config_path:
+                return True
+            else:
+                logger.warning(f"Connection drift detected. Attempting to connect to MT5 again.")
+                return self.connect()

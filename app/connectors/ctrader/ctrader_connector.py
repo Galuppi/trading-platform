@@ -22,3 +22,7 @@ class CTraderConnector(Connector):
     def connect(self) -> bool:
         logger.warning("CTraderConnector.connect() is not implemented.")
         return False
+
+    def connection_check(self) -> bool:
+        logger.warning("CTraderConnector.connection_check() is not implemented.")
+        return False
