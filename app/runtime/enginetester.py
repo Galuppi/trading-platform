@@ -2,24 +2,28 @@ import logging
 import json
 
 from app.base.base_engine import BaseEngine
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.common.config.paths import STATE_PATH, SUMMARY_PATH
 from app.common.config.constants import MODE_BACKTEST, TRADE_STATUS_CLOSED
 
 logger = logging.getLogger(__name__)
 
 class EngineTester(BaseEngine):
-    def __init__(self, account, strategies, state_manager, simulation_timestamps, summary_writer, connector_config, backtester_config, dashboard_manager):
-        super().__init__(account, strategies, state_manager, connector_config, backtester_config, dashboard_manager)
+    def __init__(self, connector, account, strategies, state_manager, simulation_timestamps, summary_writer, connector_config, backtester_config, dashboard_manager, risk_manager, news_manager = None, notify_manager =  None):
+        super().__init__(connector, account, strategies, state_manager, connector_config, backtester_config, dashboard_manager, news_manager, risk_manager, summary_writer, notify_manager)
+        self.connector = connector
         self.account=account
         self.simulation_timestamps = simulation_timestamps
         self.summary_writer = summary_writer
         self.connector_config = connector_config
         self.backtester_config = backtester_config
+        self.news_manager = news_manager
+        self.risk_manager = risk_manager
+        self.notify_manager = notify_manager
 
-    # temp
-    def _update_daily_balances_if_due(self, timestamp, last_update_timestamp):
-        pass
+        start_engine_timestamp = PlatformTime.timestamp()
+        if self._update_daily_balances_if_due(start_engine_timestamp, 0) > 0:
+            logger.info("Initial balances set.")
 
     def run(self):
         if STATE_PATH.exists():
@@ -34,15 +38,14 @@ class EngineTester(BaseEngine):
         self.initialize()
 
         last_balances_update = 0
-
         self.summary_writer.mark_wall_start()
 
         for i, current_timestamp in enumerate(self.simulation_timestamps, start=1):
             PlatformTime.set_backtest_timestamp(current_timestamp)
 
-            self._run_strategies()
-
             last_balances_update = self._update_daily_balances_if_due(current_timestamp, last_balances_update)
+
+            self._run_strategies()
 
             if i % 720 == 0:
                 self.summary_writer.save()

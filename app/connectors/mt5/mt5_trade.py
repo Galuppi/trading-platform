@@ -1,6 +1,7 @@
 import logging
 import MetaTrader5 as mt5
 
+
 from typing import Optional
 from app.base.base_trade import Trade
 from app.common.config.constants import (
@@ -9,12 +10,18 @@ from app.common.config.constants import (
     TRADE_STATUS_CLOSED,
     DATETIME_FORMAT,
 )
-from app.common.models.model_trade import OrderRequest, TradeRecord, OrderResult, TradeResult
-from app.common.system.platform_time import PlatformTime
+from app.common.models.model_trade import OrderRequest, ProfitResult, TradeRecord, OrderResult, TradeResult
+from app.common.services.platform_time import PlatformTime
+from app.common.services.calculator import Calculator
 
 logger = logging.getLogger(__name__)
 
 class Mt5Trade(Trade):
+    def __init__(self, calculator: Calculator):
+        self.calculator = calculator
+        if self.calculator is None:
+            print("[ERROR] Calculator is None in Mt5Trade constructor!")
+
     def open_position(self, order: OrderRequest) -> OrderResult:
 
         logger.info(
@@ -23,7 +30,7 @@ class Mt5Trade(Trade):
         f"SL: {order.stop_loss}, TP: {order.take_profit}, Comment: {order.comment}"
         )
 
-        return self._open_position(
+        return self._send_request(
             symbol=order.symbol,
             size=order.lot_size,
             direction=order.direction,
@@ -43,7 +50,7 @@ class Mt5Trade(Trade):
             f"Position: {trade.ticket}, Comment: {trade.comment}"
         )
 
-        result = self._open_position(
+        result = self._send_request(
             symbol=trade.symbol,
             size=trade.lot_size,
             direction=opposite_direction,
@@ -57,10 +64,8 @@ class Mt5Trade(Trade):
 
             executed_exit_price = getattr(result, "price", None)
             requested_exit_price = result.request.get("price", None)
-            trade.exit_price = executed_exit_price or requested_exit_price
-
-            if result.slippage_exit is not None:
-                trade.slippage_exit = result.slippage_exit
+            trade.exit_price = executed_exit_price or requested_exit_price 
+            trade.slippage_exit = result.slippage_exit
 
         return TradeResult(
             symbol=result.symbol,
@@ -73,23 +78,21 @@ class Mt5Trade(Trade):
             request=result.request,
         )
 
-    def _modify_position(
-        self,
-        ticket: str,
-        sl: Optional[float] = None,
-        tp: Optional[float] = None,
-        comment: str = "",
-        symbol: Optional[str] = None,
-        **kwargs
-    ) -> TradeResult:
-        """Broker-specific trade modification."""
-        raise NotImplementedError
+    def _calculate_unrealized_profit(self, trade: TradeRecord) -> ProfitResult:
+        return self.calculator.calculate_profit(trade, False)
 
     def modify_position(self, trade: TradeRecord) -> bool:
         """Modify an open trade; return True if state changed."""
-        return False
+        result = self._calculate_unrealized_profit(trade)
+        if abs(result.profit) > 1.0:
+            trade.profit = result.profit
+            trade.commission = result.commission
+            trade.slippage_entry = result.slippage_entry
+            return True
+        else:
+            return False
 
-    def _open_position(
+    def _send_request(
         self,
         symbol: str,
         size: float,

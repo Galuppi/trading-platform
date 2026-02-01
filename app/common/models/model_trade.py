@@ -75,6 +75,7 @@ class OrderRequest:
 
 @dataclass
 class ProfitResult:
-    net_profit: float = 0.0
+    profit: float = 0.0
     commission: float = 0.0
     slippage_entry: float = 0.0
+    slippage_exit: float = 0.0

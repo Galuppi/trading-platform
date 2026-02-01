@@ -1,7 +1,7 @@
 name: BreakOut
 display_name: Range breakout 1.0
-enabled: false
-total_strategy_capital: 100000
+enabled: true
+total_strategy_capital: 67500
 positioning: risk
 holiday_calendar: us
 
@@ -36,6 +36,7 @@ assets:
     range_open_min: 185
     range_close_min: 365
     range_stop_loss: false
+    range_size_restricted: false
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
@@ -48,25 +49,25 @@ assets:
     range_open_min: 180
     range_close_min: 360
     range_stop_loss: true
-    range_size_restricted: true
+    range_size_restricted: false
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
     percent_of_capital: 100
 
-  - symbol: US30
+  - symbol: US30.cash
     open_min: 965
     close_min: 1255
     range_open_min: 815
     range_close_min: 965
     range_stop_loss: false
-    range_size_restricted: true
+    range_size_restricted: false
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 100
+    percent_of_capital: 50
 
   - symbol: GBPUSD
     open_min: 690
@@ -74,13 +75,26 @@ assets:
     range_open_min: 200
     range_close_min: 690
     range_stop_loss: true
-    range_size_restricted: true
+    range_size_restricted: false
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 100
+    percent_of_capital: 25
 
+  - symbol: US500.cash
+    open_min: 965
+    close_min: 1255
+    range_open_min: 815
+    range_close_min: 965
+    range_stop_loss: false
+    range_size_restricted: false
+    risk_percent: 0.5
+    max_total_trades: 1
+    max_buy_trades: 1
+    max_sell_trades: 1
+    percent_of_capital: 25
+    
   - symbol: EURUSD
     open_min: 120
     close_min: 1080
@@ -92,17 +106,17 @@ assets:
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 100
+    percent_of_capital: 50
 
-  - symbol: DE40
+  - symbol: GER40.cash
     open_min: 785
     close_min: 1255
     range_open_min: 635
     range_close_min: 785
     range_stop_loss: false
-    range_size_restricted: true
+    range_size_restricted: false
     risk_percent: 0.5
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 100
+    percent_of_capital: 50

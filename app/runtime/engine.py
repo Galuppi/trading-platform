@@ -1,6 +1,6 @@
 import logging
 
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import MODE_LIVE
 from app.base.base_engine import BaseEngine
 
@@ -20,7 +20,14 @@ class Engine(BaseEngine):
 
         try:
             while True:
-                self.connector.connection_check()
+                if not self.connector.connection_check():
+                    logger.warning("Connection lost. Attempting to reconnect...")
+                    if self.connector.connect():
+                        logger.info("Reconnected successfully.")
+                    else:
+                        logger.error("Reconnection failed. Retrying in 30 seconds...")
+                        PlatformTime.sleep(30)
+                        continue
                 
                 current_timestamp = PlatformTime.timestamp()
 

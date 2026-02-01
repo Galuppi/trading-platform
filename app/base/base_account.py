@@ -10,6 +10,16 @@ class Account(ABC):
         pass
 
     @abstractmethod
+    def set_balance(self, new_balance: float) -> None:
+        """Set the account balance to a new value."""
+        pass
+    
+    @abstractmethod
+    def set_equity(self, new_equity: float) -> None:
+        """Set the account equity to a new value."""
+        pass
+
+    @abstractmethod
     def get_equity(self) -> float:
         """Return the current account equity."""
         pass

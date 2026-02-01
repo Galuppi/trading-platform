@@ -10,7 +10,7 @@ from app.common.models.model_strategy import (
     MarketHours,
     MarketSession
 )
-from app.loaders.loader_holiday import load_holiday_calendar
+from app.common.config.loaders.loader_holiday import load_holiday_calendar
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,7 @@ def strategy_registry(
     state_manager,
     news_manager,
     risk_manager,
+    notify_manager,
 ) -> list:
     strategies = []
 
@@ -107,6 +108,7 @@ def strategy_registry(
                 state_manager=state_manager,
                 news_manager=news_manager,
                 risk_manager=risk_manager,
+                notify_manager=notify_manager,
             )
             
             holidays = load_holiday_calendar(config.holiday_calendar)

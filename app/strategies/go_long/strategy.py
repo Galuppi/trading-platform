@@ -2,7 +2,7 @@ import logging
 
 from app.base.base_strategy import Strategy
 
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.common.models.model_strategy import StrategyConfig, AssetConfig
 from app.common.models.model_trade import TradeRecord
 from app.common.config.constants import TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
@@ -25,6 +25,9 @@ class GoLongStrategy(Strategy):
         if self.state_manager.get_target_reached():
             return None
 
+        if self.state_manager.get_weekly_profit_reached():
+            return None
+        
         if self.has_reached_max_trades(asset):
             return None
         
@@ -37,6 +40,9 @@ class GoLongStrategy(Strategy):
         if self.state_manager.get_target_reached():
             return True
 
+        if self.state_manager.get_weekly_profit_reached():
+            return True
+        
         if trade.strategy != self.strategy_name:
             return False
             

@@ -1,23 +1,24 @@
-from abc import ABC, abstractmethod
 from typing import Optional
 
-from app.common.models.model_trade import OrderRequest, ProfitResult
+from app.common.models.model_trade import OrderRequest, ProfitResult, TradeRecord
 from app.common.models.model_symbol import Range
+from app.base.base_symbol import Symbol
+from app.base.base_account import Account
 from app.common.models.model_strategy import AssetConfig
 from app.common.models.model_strategy import StrategyConfig
-from app.common.config.constants import TRADE_DIRECTION_BUY
+from app.common.config.constants import TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
+from app.common.models.model_backtest import BacktestConfig
 
-
-class Calculator(ABC):
-    @abstractmethod
-    def calculate_profit(
+class Calculator():
+    def __init__(
         self,
-        entry_price: float,
-        exit_price: float,
-        lot_size: float,
-        direction: str
-    ) -> ProfitResult:
-        pass
+        symbol: Symbol,
+        account: Account,
+    ):
+        self.symbol = symbol
+        self.account = account
+        self.commission_per_lot = self.account.get_commission_per_lot()
+        self.slippage_per_lot = self.account.get_slippage_per_lot() 
 
     def calculate_lot_size_by_capital(self, order: OrderRequest) -> float:
         ask_price = self.symbol.get_ask_price(order.symbol)
@@ -189,3 +190,59 @@ class Calculator(ABC):
         if digits < 0:
             raise ValueError("Digits must be non-negative")
         return round(value, digits)
+
+    def calculate_profit(
+            self,
+            trade: TradeRecord,
+            realized: bool,
+        ) -> ProfitResult:
+            """Calculate realized or floating profit for a trade based on status or explicit realized flag."""
+            if realized is None:
+                is_realized = (
+                    trade.status == TRADE_STATUS_CLOSED
+                    or trade.exit_price is not None
+                )
+            else:
+                is_realized = realized
+
+            if is_realized:
+                if trade.exit_price is None or trade.entry_price is None:
+                    raise ValueError(f"Missing entry or exit price for realized profit on trade {trade.ticket}")
+                price_diff = trade.exit_price - trade.entry_price
+                current_price = trade.exit_price
+            else:
+                if trade.entry_price is None:
+                    raise ValueError(f"Missing entry price for floating profit on trade {trade.ticket}")
+                try:
+                    current_price = (
+                        self.symbol.get_bid_price(trade.symbol)
+                        if trade.type.lower() == TRADE_DIRECTION_BUY
+                        else self.symbol.get_ask_price(trade.symbol)
+                    )
+                except Exception:
+                    raise ValueError(f"Could not get current price for symbol {trade.symbol}")
+                price_diff = current_price - trade.entry_price
+
+            if trade.type.lower() == TRADE_DIRECTION_SELL:
+                price_diff = -price_diff
+
+            tick_size = float(self.symbol.get_tick_size(trade.symbol)) or 0.0
+            tick_value = float(self.symbol.get_tick_value(trade.symbol)) or 0.0
+
+            if tick_size > 0 and tick_value > 0:
+                ticks_moved = price_diff / tick_size
+                gross_profit = ticks_moved * tick_value * trade.lot_size
+            else:
+                contract_size = float(self.symbol.get_contract_size(trade.symbol)) or 1.0
+                gross_profit = price_diff * trade.lot_size * contract_size
+
+            commission = (self.commission_per_lot or 0.0) * trade.lot_size
+            slippage_entry = ((self.slippage_per_lot or 0.0) * trade.lot_size * 0.5)
+            slippage_exit = ((self.slippage_per_lot or 0.0) * trade.lot_size * 0.5)
+
+            return ProfitResult(
+                profit=round(gross_profit, 2),
+                commission=round(commission, 2),
+                slippage_entry=round(slippage_entry, 2),
+                slippage_exit=round(slippage_exit, 2),
+            )

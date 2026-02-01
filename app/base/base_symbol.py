@@ -90,3 +90,8 @@ class Symbol(ABC):
     def get_point_size(self, symbol: str) -> float:
         """Return the point size for the given symbol."""
         pass
+
+    @abstractmethod
+    def get_open_price(self, symbol: str) -> float:
+        """Return the open price from the most recent M1 bar (today's opening price in practice)."""
+        pass

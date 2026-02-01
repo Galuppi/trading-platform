@@ -1,7 +1,7 @@
 name: GoLong
 display_name: Go Long 1.0
-enabled: false
-total_strategy_capital: 100000
+enabled: true
+total_strategy_capital: 67500
 positioning: capital
 holiday_calendar: us
 
@@ -30,19 +30,19 @@ market_hours:
       close_time: "00:00"
 
 assets:
-  - symbol: DE40
-    open_min: 65
+  - symbol: GER40.cash
+    open_min: 605
     close_min: 1370
     max_total_trades: 1
     percent_of_capital: 100
 
-  - symbol: US30
+  - symbol: US30.cash
     open_min: 65
     close_min: 1425
     max_total_trades: 1
     percent_of_capital: 100
 
-  - symbol: USTEC
+  - symbol: US100.cash
     open_min: 65
     close_min: 1425
     max_total_trades: 1

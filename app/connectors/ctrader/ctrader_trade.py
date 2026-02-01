@@ -28,25 +28,3 @@ class CtraderTrade(Trade):
             comment="close_position stub not implemented",
             request={}
         )
-
-    def _open_position(
-        self,
-        symbol: str,
-        size: float,
-        direction: str,
-        order_type: str,
-        sl: float = None,
-        tp: float = None,
-        price: float = None,
-        comment: str = "",
-        **kwargs
-    ) -> OrderResult:
-        logger.warning(f"[STUB] _open_position not yet implemented for cTrader — symbol: {symbol}, direction: {direction}")
-        return OrderResult(
-            accepted=False,
-            order_id=0,
-            deal=0,
-            retcode=-1,
-            comment="_open_position stub not implemented",
-            request={}
-        )

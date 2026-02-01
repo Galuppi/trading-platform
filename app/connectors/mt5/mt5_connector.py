@@ -64,3 +64,6 @@ class Mt5Connector(Connector):
             else:
                 logger.warning(f"Connection drift detected. Attempting to connect to MT5 again.")
                 return self.connect()
+        else:
+            logger.warning(f"MT5 terminal info not available. Attempting to reconnect.")
+            return self.connect()

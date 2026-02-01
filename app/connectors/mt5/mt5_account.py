@@ -12,7 +12,7 @@ from app.common.config.constants import (
     RETRY_COUNT,
     RETRY_DELAY_SECONDS,
     )
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,24 @@ class Mt5Account(Account):
         return account_info.currency
 
     def get_commission_per_lot(self) -> float:
+        return 0.0
+
+    def get_slippage_per_lot(self) -> float:
+        return 0.0  
+    
+    def get_commission(self, ticket: str) -> float:
+        lookback_hours = 24 * 7
+        now = PlatformTime.now()
+        start = now - PlatformTime.timedelta(hours=lookback_hours)
+        end = now + PlatformTime.timedelta(hours=1)
+        deals = mt5.history_deals_get(start, end)
+        if deals is None:
+            return 0.0
+        position_id = int(ticket)
+        for d in deals:
+            deal = d._asdict()
+            if deal.get("position_id") == position_id and deal.get("entry") == mt5.DEAL_ENTRY_OUT:
+                return abs(float(deal.get("commission", 0.0)))
         return 0.0
 
     def get_free_margin(self, symbol: str) -> float:
@@ -162,3 +180,9 @@ class Mt5Account(Account):
             return None
         
         return tick.time
+    
+    def set_balance(self, new_balance: float) -> None:
+       pass
+
+    def set_equity(self, new_equity: float) -> None:
+        pass

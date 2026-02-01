@@ -21,6 +21,7 @@ def load_account_risk() -> AccountRisk:
             account_take_profit=0.0,
             account_break_even=0.0,
             account_profit_level=0.0,
+            account_take_profit_week=0.0,
         )
     return AccountRisk(
         account_risk_enabled=True,
@@ -28,4 +29,5 @@ def load_account_risk() -> AccountRisk:
         account_take_profit=risk_data["account_take_profit"],
         account_break_even=risk_data["account_break_even"],
         account_profit_level=risk_data["account_profit_level"],
+        account_take_profit_week=risk_data["account_take_profit_week"],
     )

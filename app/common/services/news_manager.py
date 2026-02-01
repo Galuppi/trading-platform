@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 import urllib.request
 
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.common.models.model_news import FaireconomyEvent, ImpactLevel
 from app.common.config.paths import NEWS_URL
 

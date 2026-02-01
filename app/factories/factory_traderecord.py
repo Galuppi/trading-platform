@@ -1,5 +1,5 @@
 from app.common.models.model_trade import TradeRecord
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import TRADE_STATUS_OPEN
 
 

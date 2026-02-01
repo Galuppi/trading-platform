@@ -19,3 +19,4 @@ class BacktestConfig:
 class StrategyMetrics:
     profit: float = 0.0
     trades: int = 0
+    unrealized_profit: float = 0.0

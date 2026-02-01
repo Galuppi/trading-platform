@@ -11,16 +11,29 @@ class Mt5testerAccount(Account):
         self.balance = float(backtester_config.backtest_deposit)
         self.equity = self.balance
         self.commission_per_lot = float(backtester_config.backtest_commission_per_lot)
+        self.slippage_per_lot = float(backtester_config.backtest_slippage_per_lot)
         self.account_currency = backtester_config.backtest_currency
 
     def get_balance(self) -> float:
         return self.balance
 
+    def set_balance(self, new_balance: float) -> None:
+        self.balance = new_balance
+
     def get_equity(self) -> float:
         return self.equity
     
+    def set_equity(self, new_equity: float) -> None:
+        self.equity = new_equity
+    
     def get_commission_per_lot(self) -> float:
         return self.commission_per_lot
+
+    def get_slippage_per_lot(self) -> float:
+        return self.slippage_per_lot
+    
+    def get_commission(self, ticket: str) -> float:
+        return 0.0
 
     def get_free_margin(self, symbol: str) -> float:
         return 0.0

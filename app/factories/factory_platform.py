@@ -4,9 +4,9 @@ from app.base.base_account import Account
 from app.base.base_symbol import Symbol
 from app.base.base_connector import Connector
 from app.base.base_trade import Trade
-from app.base.base_calculator import Calculator
+from app.common.services.calculator import Calculator
 from app.common.models.model_connector import ConnectorConfig
-from app.common.system.backtest_summary import BacktestSummary
+from app.common.services.backtest_summary import BacktestSummary
 from app.common.models.model_backtest import BacktestConfig 
 
 
@@ -35,7 +35,7 @@ def get_trade(name: str, symbol: Symbol=None, calculator: Calculator = None, sum
 
     if name == "mt5":
         from app.connectors.mt5.mt5_trade import Mt5Trade
-        return Mt5Trade()
+        return Mt5Trade(calculator)
 
     if name == "ctrader":
         from app.connectors.ctrader.ctrader_trade import CTraderTrade
@@ -82,21 +82,3 @@ def get_account(name: str, backtester_config:BacktestConfig=None) -> Account:
         return Mt5testerAccount(backtester_config)
 
     raise ValueError(f"Unsupported account service for platform: {name}")
-
-
-def get_calculator(name: str, symbol: Symbol, account: Account, backtester_config:BacktestConfig=None) -> Calculator:
-    name = name.lower()
-
-    if name == "mt5":
-        from app.connectors.mt5.mt5_calculator import Mt5Calculator
-        return Mt5Calculator(symbol, account)
-
-    if name == "ctrader":
-        from app.connectors.ctrader.ctrader_calculator import CTraderCalculator
-        return CTraderCalculator(symbol, account)
-
-    if name == "mt5tester":
-        from app.connectors.mt5tester.mt5tester_calculator import Mt5testerCalculator
-        return Mt5testerCalculator(symbol, account, backtester_config)
-
-    raise ValueError(f"Unsupported calculator for platform: {name}")

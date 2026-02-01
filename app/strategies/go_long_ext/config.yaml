@@ -1,5 +1,5 @@
-name: TurnoverTuesday
-display_name: Turnover Tuesday 1.0
+name: GoLongExt
+display_name: Go Long Ext 1.0
 enabled: true
 total_strategy_capital: 67500
 positioning: capital
@@ -30,26 +30,16 @@ market_hours:
       close_time: "00:00"
 
 assets:
-  - symbol: GER40.cash
-    open_day: 1
-    open_min: 545
-    close_day: 2
+  - symbol: DE40
+    open_min: 605
     close_min: 1370
+    range_open_min: 0
+    range_close_min: 605
+    range_stop_loss: false
+    range_size_restricted: false
     max_total_trades: 1
-    percent_of_capital: 50
-
-  - symbol: US30.cash
-    open_day: 1
-    open_min: 65
-    close_day: 2
-    close_min: 1425
-    max_total_trades: 1
-    percent_of_capital: 50
-
-  - symbol: US100.cash
-    open_day: 1
-    open_min: 65
-    close_day: 2
-    close_min: 1425
-    max_total_trades: 1
-    percent_of_capital: 50
+    max_buy_trades: 1
+    max_sell_trades: 0
+    percent_of_capital: 100
+    
+   

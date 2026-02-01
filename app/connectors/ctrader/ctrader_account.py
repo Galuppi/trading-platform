@@ -22,3 +22,9 @@ class CTradeAccount(Account):
 
     def get_account_number(self) -> int:
         raise NotImplementedError("CTradeAccount.get_account_number is not implemented.")
+
+    def set_balance(self, new_balance: float) -> None:
+        raise NotImplementedError("CTradeAccount.set_balance is not implemented.")
+
+    def set_equity(self, new_equity: float) -> None:
+        raise NotImplementedError("CTradeAccount.set_equity is not implemented.")

@@ -4,24 +4,25 @@ from typing import Optional
 from app.base.base_symbol import Symbol
 from app.base.base_account import Account
 from app.base.base_trade import Trade
-from app.base.base_calculator import Calculator
+from app.common.services.calculator import Calculator
 from app.base.base_connector import Connector
 
 from app.common.models.model_trade import TradeRecord
 from app.common.models.model_strategy import StrategyConfig, AssetConfig
 from app.common.models.model_trade import TradeRecord, OrderRequest
-from app.common.system.platform_time import PlatformTime
-from app.common.system.state_manager import StateManager
-from app.common.system.news_manager import NewsManager
-from app.common.system.risk_manager import RiskManager
+from app.common.services.platform_time import PlatformTime
+from app.common.services.state_manager import StateManager
+from app.common.services.news_manager import NewsManager
+from app.common.services.risk_manager import RiskManager
+from app.common.services.notify_manager import NotifyManager
 from app.common.config.constants import (
     TRADE_DIRECTION_BUY,
     TRADE_DIRECTION_SELL,
     TRADE_STATUS_OPEN,
     TRADE_STATUS_CLOSED,
 )
-from app.loaders.loader_traderecord import create_trade_record
-from app.loaders.loader_orderrequest import build_order_request
+from app.factories.factory_traderecord import create_trade_record
+from app.factories.factory_orderrequest import build_order_request
 
 
 
@@ -39,6 +40,7 @@ class Strategy(ABC):
         self.state_manager:Optional[StateManager] = None
         self.news_manager: Optional[NewsManager] = None
         self.risk_manager: Optional[RiskManager] = None
+        self.notify_manager: Optional[NotifyManager] = None
 
     def attach_services(
         self,
@@ -51,6 +53,7 @@ class Strategy(ABC):
         state_manager: StateManager,
         news_manager: NewsManager,
         risk_manager: RiskManager,
+        notify_manager: NotifyManager,
     ):
         """Attach external services required for strategy execution."""
         self.connector = connector
@@ -61,6 +64,7 @@ class Strategy(ABC):
         self.state_manager = state_manager
         self.news_manager = news_manager
         self.risk_manager = risk_manager
+        self.notify_manager = notify_manager
 
     def set_holidays(self, holidays: list[str]):
         """Set the list of holiday dates (ISO format) to avoid trading."""
@@ -109,26 +113,28 @@ class Strategy(ABC):
         ]
 
         if asset.max_total_trades is not None:
-            if len(trades_today) >= asset.max_total_trades:
-                return False
-        else:
-            if direction == TRADE_DIRECTION_BUY:
-                if asset.max_buy_trades == 0:
+                if len(trades_today) >= asset.max_total_trades:
                     return False
-                if asset.max_buy_trades is not None:
-                    trades_same = [t for t in trades_today if t.type == TRADE_DIRECTION_BUY]
-                    if len(trades_same) >= asset.max_buy_trades:
-                        return False
-            elif direction == TRADE_DIRECTION_SELL:
-                if asset.max_sell_trades == 0:
-                    return False
-                if asset.max_sell_trades is not None:
-                    trades_same = [t for t in trades_today if t.type == TRADE_DIRECTION_SELL]
-                    if len(trades_same) >= asset.max_sell_trades:
-                        return False
-            else:
-                return False
 
+        if direction == TRADE_DIRECTION_BUY:
+            if asset.max_buy_trades == 0:
+                return False
+            if asset.max_buy_trades is not None:
+                buy_trades = [t for t in trades_today if t.type == TRADE_DIRECTION_BUY]
+                if len(buy_trades) >= asset.max_buy_trades:
+                    return False
+
+        elif direction == TRADE_DIRECTION_SELL:
+            if asset.max_sell_trades == 0:
+                return False
+            if asset.max_sell_trades is not None:
+                sell_trades = [t for t in trades_today if t.type == TRADE_DIRECTION_SELL]
+                if len(sell_trades) >= asset.max_sell_trades:
+                    return False
+
+        else:
+            return False
+    
         return self.account.has_sufficient_margin(order)
 
     def is_exit_allowed(self, trade: TradeRecord) -> bool:
@@ -174,6 +180,7 @@ class Strategy(ABC):
         if stopped:
             trade.comment = "SL/TP hit"
             trade.exit_price = trade.stop_loss
+            trade.comment = "Stopped out"
         else: 
             trade.comment = "Closed by signal"
 
@@ -183,7 +190,7 @@ class Strategy(ABC):
         """Strategy-level trade management hook."""
         changed = self.trade.modify_position(trade)
         if changed:
-            self.state_manager.add_trade(trade)
+            self.state_manager.add_trade(trade)      
 
     def finalize(self):
         """Hook for cleanup or final adjustments before shutdown."""

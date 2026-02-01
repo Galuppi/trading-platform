@@ -7,23 +7,22 @@ load_dotenv()
 
 from app.common.config.paths import STATE_PATH, LOG_PATH
 from app.common.config.constants import MODE_BACKTEST
-from app.common.system.state_manager import StateManager
-from app.common.system.logger import setup_logger
-from app.loaders.loader_connector_config import load_connector_config
-from app.loaders.loader_backtest_config import load_backtest_config
-from app.loaders.loader_platform import (
+from app.common.services.state_manager import StateManager
+from app.common.services.logger import setup_logger
+from app.common.config.loaders.loader_connector_config import load_connector_config
+from app.common.config.loaders.loader_backtest_config import load_backtest_config
+from app.factories.factory_platform import (
     get_connector,
     get_account,
     get_trade,
     get_symbol,
-    get_calculator,
 )
-from app.loaders.loader_strategy import strategy_registry
+from app.factories.factory_strategy import strategy_registry
 from app.runtime.engine import Engine
 from app.runtime.enginetester import EngineTester
-from app.loaders.loader_timestamp import load_tester_setup
-from app.common.system.backtest_summary import BacktestSummary
-from app.common.system.platform_time import PlatformTime
+from app.common.config.loaders.loader_timestamp import load_tester_setup
+from app.common.services.backtest_summary import BacktestSummary
+from app.common.services.platform_time import PlatformTime
 
 logger = logging.getLogger(__name__)
 

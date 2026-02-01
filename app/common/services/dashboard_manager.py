@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 from colorama import Fore, Style, init
 
 from app.common.config.paths import DASHBOARD_PATH
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import MODE_BACKTEST
 
 init(autoreset=True)

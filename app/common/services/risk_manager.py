@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 from app.common.models.model_account import AccountRisk
-from app.loaders.loader_account_risk import load_account_risk
+from app.common.config.loaders.loader_account_risk import load_account_risk
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,12 @@ class RiskManager:
         try:
             self._risk = load_account_risk()
             logger.info(
-                "Account risk loaded: stop_loss=%s, take_profit=%s, break_even=%s, profit_level=%s",
+                "Account risk loaded: stop_loss=%s, take_profit=%s, break_even=%s, profit_level=%s, take_profit_week=%s",
                 self._risk.account_stop_loss,
                 self._risk.account_take_profit,
                 self._risk.account_break_even,
                 self._risk.account_profit_level,
+                self._risk.account_take_profit_week,
             )
         except Exception as error:
             logger.error("Failed to load account risk configuration: %s", error)
@@ -52,6 +53,11 @@ class RiskManager:
             return None
         return self._risk.account_take_profit
 
+    def get_account_take_profit_week(self) -> Optional[float]:
+        if self._risk is None:
+            return None
+        return self._risk.account_take_profit_week  
+    
     def update_account_stop_loss(self, value: float) -> None:
         if self._risk is None:
             logger.warning("Account risk not initialized; stop loss not updated")

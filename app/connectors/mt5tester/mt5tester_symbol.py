@@ -8,7 +8,7 @@ import MetaTrader5 as mt5
 from app.base.base_symbol import Symbol
 from app.common.models.model_symbol import Range, SymbolInfo, PriceRecord
 from app.common.config.paths import DATA_PATH
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +44,11 @@ class Mt5testerSymbol(Symbol):
                     self.data_by_symbol[symbol] = combined_df
 
     def preload_symbol_info(self):
-       #if not mt5.initialize():
-       #     raise RuntimeError(f"Failed to initialize MT5: {mt5.last_error()}")
+        if not mt5.initialize():
+            raise RuntimeError(f"Failed to initialize MT5: {mt5.last_error()}")
 
         for symbol in self.data_by_symbol.keys():
+            symbol = symbol.replace(".CASH", ".cash")
             info = mt5.symbol_info(symbol)
             if not info:
                 logger.warning(f"Symbol info not found for {symbol}")
@@ -181,3 +182,18 @@ class Mt5testerSymbol(Symbol):
 
     def get_point_size(self, symbol: str) -> float:
         return self._get_mt5_info(symbol).point
+
+    def get_open_price(self, symbol: str) -> float:
+        symbol = symbol.upper()
+        df = self.data_by_symbol.get(symbol)
+        if df is None or df.empty:
+            raise ValueError(f"No data for {symbol}")
+
+        now = PlatformTime.now()
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        today_data = df.loc[day_start : day_start + timedelta(days=1)]
+        if today_data.empty:
+            raise ValueError(f"No bars available today for {symbol} (after {day_start})")
+
+        return float(today_data.iloc[0]["open"])

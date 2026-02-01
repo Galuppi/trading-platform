@@ -1,7 +1,7 @@
 import MetaTrader5 as mt5
 import logging
 
-from app.common.system.platform_time import PlatformTime
+from app.common.services.platform_time import PlatformTime
 from app.base.base_symbol import Symbol
 from app.common.models.model_symbol import Range
 from app.common.config.constants import (
@@ -110,9 +110,6 @@ class Mt5Symbol(Symbol):
         end_minute: int,
         timeframe: str = TIMEFRAME_M1,
     ) -> Range:
-        #if not mt5.initialize():
-        #    raise RuntimeError("MT5 initialization failed")
-
         now = PlatformTime.now()
         start_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + PlatformTime.timedelta(minutes=start_minute)
         end_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + PlatformTime.timedelta(minutes=end_minute)
@@ -137,3 +134,16 @@ class Mt5Symbol(Symbol):
 
     def _map_timeframe(self, tf: str) -> int:
         return TIMEFRAME_MAP.get(tf, mt5.TIMEFRAME_M1)
+
+    def get_open_price(self, symbol: str) -> float:
+            """Return the open price from the most recent M1 bar (today's opening price in practice)."""
+            if not mt5.symbol_select(symbol, True):
+                logger.warning(f"Cannot select symbol: {symbol}")
+                return None
+
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 1)
+            if rates is None or len(rates) == 0:
+                logger.warning(f"No M1 rates available for {symbol}")
+                return None
+
+            return float(rates[0]["open"])

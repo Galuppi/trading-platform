@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 
 from app.base.base_trade import Trade
-from app.base.base_calculator import Calculator
+from app.common.services.calculator import Calculator
 from app.common.config.paths import RESULT_PATH
 from app.common.models.model_trade import (
     OrderRequest,
@@ -15,8 +15,8 @@ from app.common.models.model_trade import (
     TradeResult,
     ProfitResult
 )
-from app.common.system.platform_time import PlatformTime
-from app.common.system.backtest_summary import BacktestSummary
+from app.common.services.platform_time import PlatformTime
+from app.common.services.backtest_summary import BacktestSummary
 from app.common.config.constants import (
     TRADE_DIRECTION_BUY, 
     TRADE_STATUS_CLOSED,
@@ -64,10 +64,11 @@ class Mt5testerTrade(Trade):
 
             order.price = market_price
 
-        trade_id = (
-            f"sim-{order.symbol}-{order.direction}-"
-            f"{PlatformTime.now().isoformat()}"
-        )
+            trade_id = (
+                f"sim-{order.symbol}-"
+                f"{PlatformTime.now().isoformat()}-"
+                f"{order.direction}"
+            )
 
         order_result = OrderResult(
             symbol=order.symbol,
@@ -107,13 +108,14 @@ class Mt5testerTrade(Trade):
 
             trade.exit_price = price
 
-        result = self._calculate_profit(trade)
+        result = self._calculate_realized_profit(trade)
         
         trade.exit_time = PlatformTime.now().strftime(DATETIME_FORMAT)
         trade.status = TRADE_STATUS_CLOSED
-        trade.profit = result.net_profit
+        trade.profit = result.profit
         trade.commission = result.commission
         trade.slippage_entry = result.slippage_entry
+        trade.slippage_exit = result.slippage_exit
 
         if not trade.comment:
             trade.comment = "Simulated close"
@@ -141,10 +143,6 @@ class Mt5testerTrade(Trade):
             comment=trade.comment
         )
 
-
-    def _open_position(self, *args, **kwargs):
-        return self.open_position(OrderRequest(**kwargs))
-
     def _log_order(self, order: OrderRequest, trade_id: str):
         pass
 
@@ -161,7 +159,7 @@ class Mt5testerTrade(Trade):
                 writer.writerow([
                     "Time", "Strategy", "Type", "Volume", "Symbol",
                     "Entry Price", "SL", "TP", "Close Time", "Exit Price",
-                    "Commission", "Swap", "Slippage", "Net Profit", "Comment"
+                    "Commission", "Swap", "Slippage", "Profit", "Net Profit", "Comment"
                 ])
                 self._wrote_header = True
 
@@ -178,24 +176,22 @@ class Mt5testerTrade(Trade):
                 trade.exit_price,
                 trade.commission,
                 0.0,
-                trade.slippage_entry,
+                round(trade.slippage_entry + trade.slippage_exit, 2),
                 trade.profit,
+                round(trade.profit - trade.commission - trade.slippage_entry - trade.slippage_exit, 2),
                 trade.comment
             ])
 
-    def _calculate_profit(self, trade: TradeRecord) -> ProfitResult:
-        return self.calculator.calculate_profit(trade)
+    def _calculate_realized_profit(self, trade: TradeRecord) -> ProfitResult:
+        return self.calculator.calculate_profit(trade, True)
 
-    def _modify_position(
-        self,
-        ticket: str,
-        sl: Optional[float] = None,
-        tp: Optional[float] = None,
-        comment: str = "",
-        symbol: Optional[str] = None,
-        **kwargs
-    ) -> TradeResult:
-        raise NotImplementedError
+    def _calculate_floating_profit(self, trade: TradeRecord) -> ProfitResult:
+        return self.calculator.calculate_profit(trade, False)
 
     def modify_position(self, trade: TradeRecord) -> bool:
-        return False
+        result = self._calculate_floating_profit(trade)
+        if abs(result.profit) > 1.0:
+            trade.profit = result.profit
+            return True
+        else:
+            return False

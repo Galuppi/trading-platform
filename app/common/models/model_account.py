@@ -17,9 +17,12 @@ class DailyProfitSnapshot:
     equity: float
     balance: float
     begin_balance: float
-    profit: float
+    begin_balance_week: float
+    profit_floating: float
+    profit_total_week: float
     target_reached: bool = False
     break_even_reached: bool = False
+    weekly_profit_reached: bool = False
 
 @dataclass
 class AccountRisk:
@@ -28,3 +31,4 @@ class AccountRisk:
     account_take_profit: float
     account_break_even: float
     account_profit_level: float
+    account_take_profit_week: float

@@ -1,6 +1,6 @@
 name: Crypto
 display_name: Crypto 1.3
-enabled: true
+enabled: false
 total_strategy_capital: 100000
 positioning: risk
 holiday_calendar: us
@@ -11,8 +11,8 @@ market_hours:
       open_time: "00:00"
       close_time: "00:00"
     Tuesday:
-      open_time: "00:00"
-      close_time: "00:00"
+      open_time: "01:05"
+      close_time: "23:55"
     Wednesday:
       open_time: "00:00"
       close_time: "00:00"

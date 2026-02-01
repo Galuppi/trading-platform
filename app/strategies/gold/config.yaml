@@ -1,8 +1,8 @@
-name: GoShort
-display_name: Go Short 1.0
+name: GoldStrategy
+display_name: Gold 1.0
 enabled: false
 total_strategy_capital: 100000
-positioning: capital
+positioning: risk
 holiday_calendar: us
 
 market_hours:
@@ -21,23 +21,26 @@ market_hours:
       close_time: "23:55"
     Friday:
       open_time: "01:05"
-      close_time: "23:50"
+      close_time: "23:55"
     Saturday:
       open_time: "00:00"
       close_time: "00:00"
     Sunday:
       open_time: "00:00"
       close_time: "00:00"
-      
-assets:
-  - symbol: BTCUSD
-    open_min: 80
-    close_min: 1340
-    max_total_trades: 3
-    percent_of_capital: 10
 
-  - symbol: EURUSD
-    open_min: 680
-    close_min: 1340
-    max_total_trades: 3
-    percent_of_capital: 10
+assets:
+  - symbol: XAUUSD
+    open_min: 365
+    close_min: 1135
+    range_open_min: 185
+    range_close_min: 365
+    range_stop_loss: false
+    range_size_restricted: true
+    risk_percent: 1.0
+    reward_risk_ratio: 2.0
+    max_total_trades: 30
+    max_buy_trades: 30
+    max_sell_trades: 30
+    trade_cooldown_minutes: 30
+    percent_of_capital: 3

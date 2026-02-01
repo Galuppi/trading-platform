@@ -10,7 +10,7 @@ from app.common.config.constants import TRADE_DIRECTION_BUY, TRADE_DIRECTION_SEL
 logger = logging.getLogger(__name__)
 
 
-class CryptoStrategy(Strategy):
+class GoldStrategy(Strategy):
     def __init__(self, config: StrategyConfig):
         super().__init__(config=config)
         self.range_by_symbol: dict[str, Range] = {}
@@ -145,7 +145,7 @@ class CryptoStrategy(Strategy):
     def is_exit_signal(self, trade: TradeRecord) -> bool:
         if self.state_manager.get_target_reached():
             return True
-        
+
         if self.state_manager.get_weekly_profit_reached():
             return True
         
