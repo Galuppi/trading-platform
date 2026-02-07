@@ -47,11 +47,11 @@ class BaseEngine(ABC):
             begin_balance = self.state_manager.get_begin_balance()
             weekly_profit_reached = self.state_manager.get_weekly_profit_reached()
             if weekly_profit_reached:
-                self.notify_manager.send_notification(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")
+                self.notify_manager.send_notification(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.", "Weekly Profit Target Hit", 2)
                 logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")   
             if PlatformTime.now().weekday() == 1 or begin_balance_week == begin_balance:
                 self.state_manager.save_begin_balances_week()
-                self.notify_manager.send_notification(f"New trading week begins with begin balance of {begin_balance_week}")
+                self.notify_manager.send_notification(f"New trading week begins with begin balance of {begin_balance_week}", "New Week")
             setup_logger(LOG_PATH, self.connector_config.mode)
 
         for strategy in self.strategies:
@@ -131,27 +131,40 @@ class BaseEngine(ABC):
             floating_profit = self.state_manager.get_floating_profit()
             new_balance = balance_info["balance"]   
             new_equity = new_balance + floating_profit
+          
             self.account.set_balance(new_balance)
             self.account.set_equity(new_equity)
-
             equity = self.account.get_equity()
             balance = self.account.get_balance()
 
             account_take_profit_week = self.risk_manager.get_account_take_profit_week()
             begin_balance_week = self.state_manager.get_begin_balance_week()
-
             break_even_reached = self.state_manager.get_break_even_reached()
+            weekly_profit_reached = self.state_manager.get_weekly_profit_reached()
             account_profit_level = self.risk_manager.get_account_profit_level()
-            if break_even_reached is False and begin_balance > 0:
+            target_reached = self.state_manager.get_target_reached()
+
+            take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled else False
+            stop_loss_reached = equity - begin_balance  <= account_stop_loss if account_risk_enabled else False  
+
+            if not break_even_reached and begin_balance > 0:
                 break_even_reached = equity - begin_balance >= account_break_even if account_risk_enabled else False  
                 if break_even_reached:
-                    self.risk_manager.update_account_stop_loss(account_profit_level) 
+                    self.risk_manager.update_account_stop_loss(account_profit_level)
+                    self.notify_manager.send_notification("Break-even level reached. Adjusting account stop loss.", "Break-Even Hit") 
                     logger.info("Break-even level reached. Adjusting account stop loss.") 
 
-            weekly_profit_reached = equity - begin_balance_week >= account_take_profit_week if account_risk_enabled else False
-            take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled else False
-            stop_loss_reached = equity - begin_balance  <= account_stop_loss if account_risk_enabled else False          
-            target_reached = take_profit_reached or stop_loss_reached
+            if not weekly_profit_reached and begin_balance_week > 0:
+                weekly_profit_reached = equity - begin_balance_week >= account_take_profit_week if account_risk_enabled else False
+                if weekly_profit_reached:
+                    self.notify_manager.send_notification(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.", "Weekly profit Target Hit", 2)
+                    logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")        
+
+            if not target_reached:
+                target_reached = take_profit_reached or stop_loss_reached or weekly_profit_reached
+                if target_reached:
+                    logger.info(f"Daily profit reached: {target_reached}. Trading will resume next trading day.")
+                    self.notify_manager.send_notification(f"Daily profit reached: {target_reached}. Trading will resume next trading day.", "Daily Profit Target Hit", 2)
   
             self.state_manager.save_daily_balances(equity, balance, target_reached, break_even_reached, weekly_profit_reached)
         except Exception as error:

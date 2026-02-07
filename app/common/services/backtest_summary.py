@@ -42,7 +42,7 @@ class BacktestSummary:
             } for k, v in result.items()
         }
 
-    def update_total_profit(self, profit: float, trade_date: Optional[str] = None) -> None:
+    def update_total_profit(self, profit: float = 0.0, trade_date: Optional[str] = None) -> None:
         self.total_profit += round(profit, 2)
         self.summary["total_profit"] = round(self.total_profit, 2)
         if trade_date:

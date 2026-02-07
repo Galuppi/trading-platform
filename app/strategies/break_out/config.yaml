@@ -35,6 +35,7 @@ assets:
     close_min: 1135
     range_open_min: 185
     range_close_min: 365
+    reward_risk_ratio: 1.5
     range_stop_loss: false
     range_size_restricted: false
     risk_percent: 0.5
@@ -100,6 +101,7 @@ assets:
     close_min: 1080
     range_open_min: 60
     range_close_min: 120
+    reward_risk_ratio: 1.5
     range_stop_loss: false
     range_size_restricted: true
     risk_percent: 0.5

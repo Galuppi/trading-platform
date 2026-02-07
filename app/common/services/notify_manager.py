@@ -9,17 +9,17 @@ logger = logging.getLogger(__name__)
 class NotifyManager:
     """Simple ntfy.sh notification sender"""
 
-    def __init__(self, ntfy_topic: str, server_url: str = "https://ntfy.sh", is_backtest: bool = False  ) -> None:
-        self.ntfy_topic = ntfy_topic.strip()
+    def __init__(self, notify_topic: str, server_url: str, is_backtest: bool = False) -> None:
+        self.notify_topic = notify_topic.strip()
         self.server_url = server_url.rstrip("/")
-        self.base_url = f"{self.server_url}/{self.ntfy_topic}"
+        self.base_url = f"{self.server_url}/{self.notify_topic}"
         self.last_message_timestamp = 0
         self.cooldown_minutes = 10
         self.last_message_text = ""
         self.is_backtest = is_backtest
 
     def _send(self, message: str, title: Optional[str] = None) -> bool:
-        if not self.ntfy_topic:
+        if not self.notify_topic:
             logger.warning("No ntfy topic configured - notification skipped")
             return False
 
@@ -53,7 +53,7 @@ class NotifyManager:
             logger.error("Failed to send ntfy notification: %s", str(e))
             return False
 
-    def send_notification(self, message: str, title: str = "Notification") -> bool:
+    def send_notification(self, message: str, title: str = "Notification", priority: Optional[int] = None) -> bool:
         if self.is_backtest:
             return False
         

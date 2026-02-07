@@ -22,3 +22,4 @@ SUMMARY_PATH = ROOT_DIR / "backtest-results" / "backtest_summary.json"
 
 #external urls
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.csv"
+NOTIFY_URL = "https://ntfy.sh"

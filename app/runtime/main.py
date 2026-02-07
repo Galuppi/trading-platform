@@ -7,10 +7,11 @@ from app.factories.factory_calculator import get_calculator
 load_dotenv()
 
 from app.common.config.paths import STATE_PATH, LOG_PATH
-from app.common.config.constants import MODE_BACKTEST, NOTIFY_DEFAULT_TOPIC
+from app.common.config.constants import MODE_BACKTEST
 from app.common.services.logger import setup_logger
 from app.common.config.loaders.loader_connector_config import load_connector_config
 from app.common.config.loaders.loader_backtest_config import load_backtest_config
+from app.common.config.loaders.loader_notify_config import load_notify_config
 from app.factories.factory_platform import (
     get_connector,
     get_account,
@@ -35,6 +36,7 @@ if __name__ == "__main__":
 
     connector_config = load_connector_config()
     backtester_config = load_backtest_config()
+    notify_config = load_notify_config()
 
     platform_name = (connector_config.type or "").lower()
     is_backtest = connector_config.mode == MODE_BACKTEST
@@ -53,7 +55,7 @@ if __name__ == "__main__":
     dashboard = get_dashboard_manager()
     news_manager = get_news_manager(window_minutes=30)
     risk_manager = get_risk_manager()
-    notify_manager = get_notify_manager(ntfy_topic=NOTIFY_DEFAULT_TOPIC, connector_config=connector_config)
+    notify_manager = get_notify_manager(notify_config, is_backtest)
     calculator = get_calculator(symbol, account)
     trade = get_trade(platform_name, symbol, calculator, summary_writer)
    

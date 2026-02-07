@@ -4,4 +4,4 @@ risk:
   account_take_profit: 2000
   account_break_even: 1500
   account_profit_level: 1000
-  account_take_profit_week: 2000
+  account_take_profit_week: 200

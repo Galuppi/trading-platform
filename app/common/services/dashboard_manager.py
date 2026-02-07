@@ -176,7 +176,7 @@ class DashboardManager:
             equity_str = f"{balance_state.equity:.2f}"
             balance_str = f"{balance_state.balance:.2f}"
             begin_balance_str = f"{balance_state.begin_balance:.2f}"
-            profit = balance_state.profit
+            profit = balance_state.profit_floating
             target_reached = "Yes" if balance_state.target_reached else "No"
             profit_class = "profit-neg" if profit < 0 else "profit-pos"
             profit_html = f"<span class='{profit_class}'>{profit:+.2f}</span>"
@@ -221,11 +221,11 @@ class DashboardManager:
         if mode != MODE_BACKTEST:
             try:
                 balance_state = state_manager.get_state_balances()
-                color = Fore.RED if balance_state.profit < 0 else Fore.GREEN
+                color = Fore.RED if balance_state.profit_floating < 0 else Fore.GREEN
                 print(
                     f" Equity: {balance_state.equity:.2f} | "
                     f"Balance: {balance_state.balance:.2f} | "
-                    f"Profit: {color}{balance_state.profit:+.2f}{Style.RESET_ALL}"
+                    f"Profit: {color}{balance_state.profit_floating:+.2f}{Style.RESET_ALL}"
                 )
             except Exception:
                 print(" [balance unavailable]")

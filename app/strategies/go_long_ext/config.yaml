@@ -30,7 +30,7 @@ market_hours:
       close_time: "00:00"
 
 assets:
-  - symbol: DE40
+  - symbol: GER40.cash
     open_min: 605
     close_min: 1370
     range_open_min: 0

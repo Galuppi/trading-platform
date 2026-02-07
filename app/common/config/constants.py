@@ -39,7 +39,4 @@ POSITIONING_CAPITAL = "capital"
 RETRY_COUNT = 3
 RETRY_DELAY_SECONDS = 1.0 
 
-# notification settings
-NOTIFY_DEFAULT_TOPIC = "edgellence"
-
 
