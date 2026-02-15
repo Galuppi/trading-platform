@@ -12,7 +12,7 @@ class MarginInfo:
     has_sufficient: bool
 
 @dataclass
-class DailyProfitSnapshot:
+class AccountSnapshot:
     timestamp: str
     equity: float
     balance: float

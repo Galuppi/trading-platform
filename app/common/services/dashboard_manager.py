@@ -102,7 +102,7 @@ class DashboardManager:
         for strategy in strategies:
             strategy_name = strategy.strategy_display_name
             asset_list = ", ".join(asset.symbol for asset in strategy.assets)
-            trades = state_manager.get_execute_entrys(strategy=strategy.strategy_name) or []
+            trades = state_manager.get_open_trades(strategy=strategy.strategy_name) or []
             open_trades = len(trades)
             is_market_open = strategy.is_market_open()
             is_holiday = strategy.is_holiday()
@@ -172,7 +172,7 @@ class DashboardManager:
 
     def _build_live_balances(self, state_manager):
         try:
-            balance_state = state_manager.get_state_balances()
+            balance_state = state_manager.get_account_snapshot()
             equity_str = f"{balance_state.equity:.2f}"
             balance_str = f"{balance_state.balance:.2f}"
             begin_balance_str = f"{balance_state.begin_balance:.2f}"
@@ -213,14 +213,14 @@ class DashboardManager:
         for strategy in strategies:
             strategy_name = strategy.strategy_display_name
             asset_list = ", ".join(asset.symbol for asset in strategy.assets)
-            trades = len(state_manager.get_execute_entrys(strategy=strategy.strategy_name) or [])
+            trades = len(state_manager.get_open_trades(strategy=strategy.strategy_name) or [])
             market_status = "OPEN" if strategy.is_market_open() else "CLOSED"
             print(f" • {strategy_name} | Trades: {trades} | {market_status} | {asset_list}")
         print("-" * 60)
 
         if mode != MODE_BACKTEST:
             try:
-                balance_state = state_manager.get_state_balances()
+                balance_state = state_manager.get_account_snapshot()
                 color = Fore.RED if balance_state.profit_floating < 0 else Fore.GREEN
                 print(
                     f" Equity: {balance_state.equity:.2f} | "

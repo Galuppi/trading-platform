@@ -1,3 +1,5 @@
+import logging
+
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -24,6 +26,7 @@ from app.common.config.constants import (
 from app.factories.factory_traderecord import create_trade_record
 from app.factories.factory_orderrequest import build_order_request
 
+logger = logging.getLogger(__name__)
 
 
 class Strategy(ABC):
@@ -165,6 +168,8 @@ class Strategy(ABC):
                 strategy_name=self.strategy_name
             )
             self.state_manager.add_trade(trade)
+            self.notify_manager.send_notification(f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. Strategy: {self.strategy_display_name}", "Open Trade")
+            logger.info(f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. Strategy: {self.strategy_display_name}")
 
     def set_range(self):
         """Optional hook to update internal strategy state per tick/cycle."""
@@ -185,6 +190,9 @@ class Strategy(ABC):
             trade.comment = "Closed by signal"
 
         self.state_manager.add_trade(trade)
+        self.notify_manager.send_notification(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}", "Close Trade")
+        logger.info(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}")
+
 
     def manage_entry(self, trade: TradeRecord) -> None:
         """Strategy-level trade management hook."""

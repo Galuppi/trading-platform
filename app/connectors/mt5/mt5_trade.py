@@ -24,7 +24,7 @@ class Mt5Trade(Trade):
 
     def open_position(self, order: OrderRequest) -> OrderResult:
 
-        logger.info(
+        logger.debug(
         f"Placing order — Symbol: {order.symbol}, "
         f"Lot Size: {order.lot_size}, Direction: {order.direction}, "
         f"SL: {order.stop_loss}, TP: {order.take_profit}, Comment: {order.comment}"
@@ -44,7 +44,7 @@ class Mt5Trade(Trade):
             TRADE_DIRECTION_SELL if trade.type == TRADE_DIRECTION_BUY else TRADE_DIRECTION_BUY
         )
 
-        logger.info(
+        logger.debug(
             f"Closing order — Symbol: {trade.symbol}, "
             f"Lot Size: {trade.lot_size}, Direction: {opposite_direction}, "
             f"Position: {trade.ticket}, Comment: {trade.comment}"

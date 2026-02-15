@@ -29,6 +29,7 @@ from app.factories.factory_dashboard_manager import get_dashboard_manager
 from app.factories.factory_news_manager import get_news_manager
 from app.factories.factory_risk_manager import get_risk_manager
 from app.factories.factory_notify_manager import get_notify_manager
+from app.factories.factory_sync_manager import get_sync_manager
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,7 @@ if __name__ == "__main__":
     notify_manager = get_notify_manager(notify_config, is_backtest)
     calculator = get_calculator(symbol, account)
     trade = get_trade(platform_name, symbol, calculator, summary_writer)
+    sync_manager = get_sync_manager(state_manager, notify_manager)
    
     connector = get_connector(platform_name, connector_config)
     if not connector.connect():
@@ -97,6 +99,7 @@ if __name__ == "__main__":
             news_manager=news_manager,
             risk_manager=risk_manager,
             notify_manager=notify_manager,
+            sync_manager=sync_manager,
         )
     else:
         app = Engine(
@@ -111,6 +114,7 @@ if __name__ == "__main__":
             risk_manager=risk_manager,
             summary_writer=summary_writer,
             notify_manager=notify_manager,
+            sync_manager=sync_manager,
         )
 
     try:

@@ -22,7 +22,7 @@ class EngineTester(BaseEngine):
         self.notify_manager = notify_manager
 
         start_engine_timestamp = PlatformTime.timestamp()
-        if self._update_daily_balances_if_due(start_engine_timestamp, 0) > 0:
+        if self._update_and_check_profit_targets(start_engine_timestamp, 0) > 0:
             logger.info("Initial balances set.")
 
     def run(self):
@@ -43,7 +43,7 @@ class EngineTester(BaseEngine):
         for i, current_timestamp in enumerate(self.simulation_timestamps, start=1):
             PlatformTime.set_backtest_timestamp(current_timestamp)
 
-            last_balances_update = self._update_daily_balances_if_due(current_timestamp, last_balances_update)
+            last_balances_update = self._update_and_check_profit_targets(current_timestamp, last_balances_update)
 
             self._run_strategies()
 

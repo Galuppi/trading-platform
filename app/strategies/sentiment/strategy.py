@@ -14,13 +14,13 @@ from app.common.config.constants import TRADE_DIRECTION_SELL, TRADE_DIRECTION_BU
 
 logger = logging.getLogger(__name__)
 
+ACT_ON_NEWS_RELEASES = False
 
 class SentimentStrategy(Strategy):
     def __init__(self, config: StrategyConfig) -> None:
         super().__init__(config=config)
         self.signals: Dict[str, SentimentSignal] = {}
         self.last_load: Optional[float] = None
-        self.last_logged_event_ts: int = 0
         self.resume_trading: bool = False
 
     def initialize(self) -> None:
@@ -53,20 +53,15 @@ class SentimentStrategy(Strategy):
         
         if self.state_manager.get_weekly_profit_reached():
             return None
-        
-        event = self.news_manager.get_releasing_event(asset.symbol)
-        if event and event.timestamp != self.last_logged_event_ts:
-            self.state_manager.save_last_event(event)
-            logger.info(f"Current news event: {event}")
-            self.last_logged_event_ts = event.timestamp
 
-        if self.news_manager.is_releasing_news(asset.symbol):
-            self.resume_trading = False     
-            return None
-        else:
-            if not self.resume_trading:
-                logger.info(f"News event expired, resuming trading")
-                self.resume_trading = True
+        if ACT_ON_NEWS_RELEASES:
+            if self.news_manager.is_releasing_news(asset.symbol):
+                self.resume_trading = False     
+                return None
+            else:
+                if not self.resume_trading:
+                    logger.info(f"News event expired, resuming trading")
+                    self.resume_trading = True
       
         if self.has_reached_max_trades(asset):
             return None
@@ -115,11 +110,19 @@ class SentimentStrategy(Strategy):
         
         if trade.strategy != self.strategy_name:
             return False
-                
+        
+        current_is_releasing_news = False
         for asset in self.assets:
             if asset.symbol == trade.symbol:
-                return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0) or self.news_manager.is_releasing_news(asset.symbol)
+                is_releasing_news = self.news_manager.is_releasing_news(asset.symbol)
+                if is_releasing_news and ACT_ON_NEWS_RELEASES:
+                    current_is_releasing_news = True
+                  
+        for asset in self.assets:
+            if asset.symbol == trade.symbol:
+                return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0) or current_is_releasing_news
         return False
+
 
     def _load_signals(self):
         try:

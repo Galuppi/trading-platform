@@ -13,7 +13,7 @@ HOLIDAY_PATH = APP_DIR / "common" / "config" / "holidays" / "holidays_{}.yaml"
 ACCOUNT_RISK_PATH = APP_DIR / "common" / "config" / "account_risk.yaml"
 
 #dashboard files
-DASHBOARD_PATH = ROOT_WWW / "_status_dashboard.html"
+DASHBOARD_PATH = ROOT_WWW / "status_dashboard.html"
 
 #backtest directories and files
 DATA_PATH = ROOT_DIR / "historical-data"
@@ -22,4 +22,3 @@ SUMMARY_PATH = ROOT_DIR / "backtest-results" / "backtest_summary.json"
 
 #external urls
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.csv"
-NOTIFY_URL = "https://ntfy.sh"

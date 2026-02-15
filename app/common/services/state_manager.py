@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union, Any
 from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import DATETIME_FORMAT, TRADE_STATUS_OPEN, TRADE_STATUS_CLOSED, TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
 from app.common.models.model_trade import TradeRecord
-from app.common.models.model_account import DailyProfitSnapshot
+from app.common.models.model_account import AccountSnapshot
 from app.base.base_account import Account
 from app.common.models.model_news import FaireconomyEvent
 
@@ -106,36 +106,6 @@ class StateManager:
             if not str(k).startswith("_") and isinstance(v, dict)
         ]
 
-    def get_execute_entrys(
-        self,
-        symbol: Optional[str] = None,
-        strategy: Optional[str] = None,
-        trade_type: Optional[str] = None,
-    ) -> List[TradeRecord]:
-        result: List[TradeRecord] = []
-        for key, trade in self.state.items():
-            if str(key).startswith("_"):
-                continue
-            if not isinstance(trade, dict):
-                continue
-            if trade.get("status") != TRADE_STATUS_OPEN:
-                continue
-            if symbol is not None and trade.get("symbol") != symbol:
-                continue
-            if strategy is not None and trade.get("strategy") != strategy:
-                continue
-            if trade_type is not None and trade.get("type") != trade_type:
-                continue
-            obj = self._cache.get(key)
-            if obj is None:
-                try:
-                    obj = TradeRecord(**trade)
-                    self._cache[key] = obj
-                except Exception:
-                    continue
-            result.append(obj)
-        return result
-
     def count_trades_today(
         self,
         strategy: Optional[str] = None,
@@ -163,17 +133,6 @@ class StateManager:
                 continue
             count += 1
         return count
-
-    def can_open_trade(
-        self,
-        max_per_day: int,
-        strategy: Optional[str] = None,
-        symbol: Optional[str] = None,
-        trade_type: Optional[str] = None,
-    ) -> bool:
-        if max_per_day <= 0:
-            return False
-        return self.count_trades_today(strategy, symbol, trade_type) < max_per_day
 
     def clean_old_closed_trades(self, max_age_hours: int = 24) -> None:
         cutoff = PlatformTime.now() - PlatformTime.timedelta(hours=max_age_hours)
@@ -212,7 +171,7 @@ class StateManager:
         self._cache.pop("_last_event", None)
         self.save()
 
-    def save_daily_balances(self, equity: float, balance: float, target_reached: bool, break_even_reached: bool, weekly_profit_reached: bool) -> None:
+    def save_account_snapshot(self, equity: float, balance: float, target_reached: bool, break_even_reached: bool, weekly_profit_reached: bool) -> None:
         snapshot_data = self.state.get("_daily_profit")
 
         if not snapshot_data:
@@ -230,7 +189,7 @@ class StateManager:
             break_even_reached = bool(break_even_reached)
             weekly_profit_reached = bool(weekly_profit_reached)
             
-        snapshot = DailyProfitSnapshot(
+        snapshot = AccountSnapshot(
             timestamp=PlatformTime.datetime_str(),
             equity=float(equity),
             balance=float(balance),
@@ -255,7 +214,7 @@ class StateManager:
         equity = snapshot_data["equity"]
         begin_balance_week = snapshot_data["begin_balance_week"]
         weekly_profit_reached = snapshot_data["weekly_profit_reached"]
-        snapshot = DailyProfitSnapshot(
+        snapshot = AccountSnapshot(
             timestamp=PlatformTime.datetime_str(),
             begin_balance=float(round(balance, 2)),
             begin_balance_week=float(round(begin_balance_week, 2)),
@@ -277,7 +236,7 @@ class StateManager:
 
         balance = snapshot_data["balance"]
         equity = snapshot_data["equity"]
-        snapshot = DailyProfitSnapshot(
+        snapshot = AccountSnapshot(
             timestamp=PlatformTime.datetime_str(),
             begin_balance=float(round(balance, 2)),
             begin_balance_week=float(round(balance, 2)),
@@ -328,7 +287,7 @@ class StateManager:
             return False     
         return snapshot_data.get("break_even_reached", False)
     
-    def get_state_balances(self) -> DailyProfitSnapshot:
+    def get_account_snapshot(self) -> AccountSnapshot:
         snapshot_data: Optional[dict] = self.state.get("_daily_profit")     
         if snapshot_data is not None:
             begin_balance = round(snapshot_data["begin_balance"], 2)
@@ -346,7 +305,7 @@ class StateManager:
             target_reached = False
             break_even_reached = False
         
-        return DailyProfitSnapshot(
+        return AccountSnapshot(
             timestamp=PlatformTime.datetime_str(),
             begin_balance=begin_balance,
             begin_balance_week=0,
@@ -390,40 +349,6 @@ class StateManager:
                     continue
             trades.append(obj)
         return trades
-
-    def sync_status_with_broker(self, open_ticket_ids: List[str]) -> None:
-        open_ticket_ids_set = set(open_ticket_ids)
-        for trade in self.get_all_trades():
-            if trade.status == TRADE_STATUS_OPEN and str(trade.ticket) not in open_ticket_ids_set:
-                trade.status = TRADE_STATUS_CLOSED
-                trade.exit_time = PlatformTime.now().strftime(DATETIME_FORMAT)
-                trade.comment = "Closed externally"
-                self.add_trade(trade)
-
-    def sync_tickets_with_broker(self, closed_tickets: List[TradeRecord]) -> None:
-        if not closed_tickets:
-            return
-        closed_tickets_map = {str(t.ticket): t for t in closed_tickets}
-        for trade in self.get_all_trades():
-            ticket = str(trade.ticket)
-            broker_trade = closed_tickets_map.get(ticket)
-            if not broker_trade:
-                continue
-            updated = False
-            if (trade.exit_price is None or trade.exit_price == 0.0) and broker_trade.exit_price:
-                trade.exit_price = broker_trade.exit_price
-                updated = True
-            if (trade.profit is None or trade.profit == 0.0) and broker_trade.profit:
-                trade.profit = broker_trade.profit
-                updated = True
-            if (trade.commission is None or trade.commission == 0.0) and broker_trade.commission:
-                trade.commission = broker_trade.commission
-                updated = True
-            if trade.slippage_exit is None:
-                trade.slippage_exit = 0.0
-                updated = True
-            if updated:
-                self.add_trade(trade)
 
     def save_server_time_offset(self, offset_hours: float) -> None:
         self.state["_server_time_offset"] = {"offset_hours": offset_hours}

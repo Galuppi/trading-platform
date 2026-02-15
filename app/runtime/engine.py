@@ -15,7 +15,7 @@ class Engine(BaseEngine):
         last_news_refresh_update = 0
 
         start_engine_timestamp =PlatformTime.timestamp()
-        if self._update_daily_balances_if_due(start_engine_timestamp, 0) > 0:
+        if self._update_and_check_profit_targets(start_engine_timestamp, 0) > 0:
             logger.info("Initial balances set.")
 
         try:
@@ -47,12 +47,12 @@ class Engine(BaseEngine):
                     PlatformTime.set_offset(persisted_offset)
 
                 open_ticket_ids = self.account.get_open_tickets()
-                self.state_manager.sync_status_with_broker(open_ticket_ids)
+                self.sync_manager.sync_status_with_broker(open_ticket_ids)
                 closed_tickets = self.account.get_closed_tickets()
-                self.state_manager.sync_tickets_with_broker(closed_tickets)
+                self.sync_manager.sync_tickets_with_broker(closed_tickets)
                 self.state_manager.save_server_last_tick(current_tick_timestamp)
-                last_news_refresh_update = self._refresh_calendar_if_due(current_timestamp, last_news_refresh_update)
-                last_balances_update = self._update_daily_balances_if_due(current_timestamp, last_balances_update)                                             
+                last_news_refresh_update = self._periodic_news_calendar_refresh(current_timestamp, last_news_refresh_update)
+                last_balances_update = self._update_and_check_profit_targets(current_timestamp, last_balances_update)                                             
                 self.dashboard_manager.print_status_report(self.strategies, self.state_manager, MODE_LIVE, log_to_terminal=True)
 
                 self._run_strategies()
