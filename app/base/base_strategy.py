@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from abc import ABC, abstractmethod
@@ -9,7 +11,6 @@ from app.base.base_trade import Trade
 from app.common.services.calculator import Calculator
 from app.base.base_connector import Connector
 
-from app.common.models.model_trade import TradeRecord
 from app.common.models.model_strategy import StrategyConfig, AssetConfig
 from app.common.models.model_trade import TradeRecord, OrderRequest
 from app.common.services.platform_time import PlatformTime
@@ -21,7 +22,6 @@ from app.common.config.constants import (
     TRADE_DIRECTION_BUY,
     TRADE_DIRECTION_SELL,
     TRADE_STATUS_OPEN,
-    TRADE_STATUS_CLOSED,
 )
 from app.factories.factory_traderecord import create_trade_record
 from app.factories.factory_orderrequest import build_order_request
@@ -40,7 +40,7 @@ class Strategy(ABC):
         self.symbol: Optional[Symbol] = None
         self.trade: Optional[Trade] = None
         self.calculator: Optional[Calculator] = None
-        self.state_manager:Optional[StateManager] = None
+        self.state_manager: Optional[StateManager] = None
         self.news_manager: Optional[NewsManager] = None
         self.risk_manager: Optional[RiskManager] = None
         self.notify_manager: Optional[NotifyManager] = None
@@ -57,7 +57,7 @@ class Strategy(ABC):
         news_manager: NewsManager,
         risk_manager: RiskManager,
         notify_manager: NotifyManager,
-    ):
+    ) -> None:
         """Attach external services required for strategy execution."""
         self.connector = connector
         self.account = account
@@ -69,14 +69,14 @@ class Strategy(ABC):
         self.risk_manager = risk_manager
         self.notify_manager = notify_manager
 
-    def set_holidays(self, holidays: list[str]):
+    def set_holidays(self, holidays: list[str]) -> None:
         """Set the list of holiday dates (ISO format) to avoid trading."""
         self.holidays = holidays
 
     def is_valid_symbol(self, symbol: str) -> bool:
         """Check if the symbol is valid and can be prepared."""
         return self.symbol.prepare_symbol(symbol) if self.symbol else False
-  
+
     def is_holiday(self) -> bool:
         """Return True if today is a defined trading holiday."""
         return PlatformTime.today() in self.holidays
@@ -137,14 +137,14 @@ class Strategy(ABC):
 
         else:
             return False
-    
+
         return self.account.has_sufficient_margin(order)
 
     def is_exit_allowed(self, trade: TradeRecord) -> bool:
         """Check if conditions allow this trade to be closed."""
         return not self.is_holiday() and self.is_market_open()
-    
-    def execute_entry(self, order: OrderRequest):
+
+    def execute_entry(self, order: OrderRequest) -> None:
         """Send a market order and record the trade if accepted."""
         if order.lot_size <= 0:
             return
@@ -171,39 +171,37 @@ class Strategy(ABC):
             self.notify_manager.send_notification(f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. Strategy: {self.strategy_display_name}", "Open Trade")
             logger.info(f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. Strategy: {self.strategy_display_name}")
 
-    def set_range(self):
+    def set_range(self) -> None:
         """Optional hook to update internal strategy state per tick/cycle."""
         pass
 
     def execute_exit(self, trade: TradeRecord, stopped: bool = False) -> None:
         """Send a market order and record the trade if accepted."""
-        
         result = self.trade.close_position(trade)
         if not result or not result.accepted:
             return
-        
+
         if stopped:
             trade.comment = "SL/TP hit"
             trade.exit_price = trade.stop_loss
             trade.comment = "Stopped out"
-        else: 
+        else:
             trade.comment = "Closed by signal"
 
         self.state_manager.add_trade(trade)
         self.notify_manager.send_notification(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}", "Close Trade")
         logger.info(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}")
 
-
     def manage_entry(self, trade: TradeRecord) -> None:
         """Strategy-level trade management hook."""
         changed = self.trade.modify_position(trade)
         if changed:
-            self.state_manager.add_trade(trade)      
+            self.state_manager.add_trade(trade)
 
     def finalize(self):
         """Hook for cleanup or final adjustments before shutdown."""
         pass
-
+    
     def has_reached_max_trades(self, asset: AssetConfig) -> bool:
         """Return True if this strategy has reached its max trades for the asset today."""
         open_trades = self.state_manager.get_open_trades(
@@ -228,8 +226,9 @@ class Strategy(ABC):
             return True
 
         return False
-    
+
     def is_sl_tp_hit(self, trade: TradeRecord) -> bool:
+        """Check if stop loss or take profit level has been hit for this trade."""
         if trade.status != TRADE_STATUS_OPEN:
             return False
 
@@ -238,7 +237,7 @@ class Strategy(ABC):
 
         stop_loss = trade.stop_loss or 0
         take_profit = trade.take_profit or 0
-        
+
         if trade.type == TRADE_DIRECTION_BUY:
             if stop_loss > 0 and bid <= stop_loss:
                 return True
@@ -263,7 +262,7 @@ class Strategy(ABC):
         return self.config.display_name or self.strategy_name
 
     @abstractmethod
-    def initialize(self):
+    def initialize(self) -> None:
         """Initialize internal state and prepare for execution."""
         pass
 
@@ -273,7 +272,7 @@ class Strategy(ABC):
         pass
 
     @abstractmethod
-    def is_exit_signal(self, trade: TradeRecord) -> bool:
+    def is_exit_signal(self, trade: TradeRecord, asset_config: AssetConfig) -> bool:
         """Check if market conditions trigger an exit signal for a trade."""
         pass
     

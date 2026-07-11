@@ -1,7 +1,7 @@
 name: BreakOut
 display_name: Range breakout 1.0
 enabled: true
-total_strategy_capital: 67500
+total_strategy_capital: 65000
 positioning: risk
 holiday_calendar: us
 
@@ -35,14 +35,14 @@ assets:
     close_min: 1135
     range_open_min: 185
     range_close_min: 365
-    reward_risk_ratio: 1.5
+    reward_risk_ratio: 4.0
     range_stop_loss: false
     range_size_restricted: false
-    risk_percent: 0.5
+    risk_percent: 1.0
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 100
+    percent_of_capital: 120
 
   - symbol: USDJPY
     open_min: 360
@@ -55,7 +55,7 @@ assets:
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 100
+    percent_of_capital: 50
 
   - symbol: US30.cash
     open_min: 965
@@ -68,7 +68,7 @@ assets:
     max_total_trades: 1
     max_buy_trades: 1
     max_sell_trades: 1
-    percent_of_capital: 50
+    percent_of_capital: 100
 
   - symbol: GBPUSD
     open_min: 690
@@ -101,7 +101,6 @@ assets:
     close_min: 1080
     range_open_min: 60
     range_close_min: 120
-    reward_risk_ratio: 1.5
     range_stop_loss: false
     range_size_restricted: true
     risk_percent: 0.5
@@ -122,3 +121,30 @@ assets:
     max_buy_trades: 1
     max_sell_trades: 1
     percent_of_capital: 50
+
+  - symbol: EURJPY
+    open_min: 360
+    close_min: 1080
+    range_open_min: 240
+    range_close_min: 600
+    range_stop_loss: true
+    range_size_restricted: false
+    risk_percent: 0.5
+    max_total_trades: 1
+    max_buy_trades: 1
+    max_sell_trades: 1
+    percent_of_capital: 50
+    
+  - symbol: XAGUSD
+    open_min: 305
+    close_min: 1135
+    range_open_min: 0
+    range_close_min: 305
+    reward_risk_ratio: 4.0
+    range_stop_loss: true
+    range_size_restricted: false
+    risk_percent: 1.0
+    max_total_trades: 1
+    max_buy_trades: 1
+    max_sell_trades: 1
+    percent_of_capital: 1

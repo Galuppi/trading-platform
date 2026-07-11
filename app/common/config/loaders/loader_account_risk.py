@@ -13,7 +13,7 @@ def load_account_risk() -> AccountRisk:
     with open(path, "r") as file:
         data = yaml.safe_load(file) or {}
     risk_data = data.get("risk", {})
-    enable_account_risk=risk_data["enabled"],
+    enable_account_risk=risk_data["account_risk_enabled"],
     if not enable_account_risk:
         return AccountRisk(
             account_risk_enabled=False,

@@ -7,10 +7,13 @@ class ConnectorConfig:
     mode: str
     server: str
     timezone: str
+    offset: int
     login: Optional[int]
     password: Optional[str]
+    terminal_path: Optional[str]
     api_key: Optional[str]
     account_id: Optional[str]
     client_id: Optional[str]
     client_secret: Optional[str]
     refresh_token: Optional[str]
+    

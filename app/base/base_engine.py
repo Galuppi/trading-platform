@@ -1,46 +1,76 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import logging
+from typing import List, Optional
 
-from app.common.config.constants import TRADE_STATUS_CLOSED, MODE_LIVE, TRADE_STATUS_OPEN
+from app.base.base_account import Account
+from app.base.base_connector import Connector
+from app.base.base_strategy import Strategy
+from app.common.config.constants import MODE_LIVE, TRADE_STATUS_OPEN
 from app.common.config.paths import LOG_PATH
+from app.common.models.model_connector import ConnectorConfig
+from app.common.models.model_backtest import BacktestConfig
 from app.common.services.platform_time import PlatformTime
 from app.common.services.logger import setup_logger
+from app.common.services.dashboard_manager import DashboardManager
+from app.common.services.news_manager import NewsManager
+from app.common.services.risk_manager import RiskManager
+from app.common.services.backtest_summary import BacktestSummary
+from app.common.services.notify_manager import NotifyManager
+from app.common.services.sync_manager import SyncManager
+from app.common.services.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 
 class BaseEngine(ABC):
 
-    def __init__(self, connector, account, strategies, state_manager, connector_config, backtester_config, dashboard_manager=None, news_manager=None, risk_manager=None, summary_writer=None, notify_manager=None, sync_manager=None):
+    def __init__(
+        self,
+        connector: Connector,
+        account: Account,
+        strategies: List[Strategy],
+        state_manager: StateManager,
+        connector_config: ConnectorConfig,
+        backtester_config: BacktestConfig,
+        dashboard_manager: DashboardManager,
+        news_manager: NewsManager,
+        summary_writer: BacktestSummary,
+        notify_manager: NotifyManager,
+        risk_manager: Optional[RiskManager] = None,
+        sync_manager: Optional[SyncManager] = None,
+    ) -> None:
         """Initialize the engine with a list of strategies and a state manager."""
-        self.connector = connector
-        self.account = account
-        self.strategies = strategies
-        self.state_manager = state_manager
-        self.connector_config = connector_config
-        self.backtester_config = backtester_config
-        self.today = 0
-        self.dashboard_manager = dashboard_manager
-        self.news_manager = news_manager
-        self.risk_manager = risk_manager
-        self.summary_writer = summary_writer
-        self.notify_manager = notify_manager
-        self.sync_manager = sync_manager
+        self.connector: Connector = connector
+        self.account: Account = account
+        self.strategies: List[Strategy] = strategies
+        self.state_manager: StateManager = state_manager
+        self.connector_config: ConnectorConfig = connector_config
+        self.backtester_config: BacktestConfig = backtester_config
+        self.today: int = 0
+        self.dashboard_manager: DashboardManager = dashboard_manager
+        self.news_manager: NewsManager = news_manager
+        self.risk_manager: Optional[RiskManager] = risk_manager
+        self.summary_writer: BacktestSummary = summary_writer
+        self.notify_manager: NotifyManager = notify_manager
+        self.sync_manager: Optional[SyncManager] = sync_manager
         self.last_logged_event_ts: int = 0
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Call the initialize method on all strategies."""
         logger.info("Initializing strategies...")
         for strategy in self.strategies:
             strategy.initialize()
         logger.info("All strategies initialized.")
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Finalize all strategies and perform shutdown procedures."""
         for strategy in self.strategies:
             strategy.finalize()
         logger.info("Trading system shutdown complete.")
-    
-    def _run_strategies(self):
+
+    def _run_strategies(self) -> None:
+        """Execute all strategies and manage trades."""
         if self.today != PlatformTime.now().day:
             self.state_manager.clean_last_event()
             self.state_manager.save_begin_balances()
@@ -53,6 +83,7 @@ class BaseEngine(ABC):
                 logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")   
             if PlatformTime.now().weekday() == 0 or begin_balance_week == begin_balance:
                 self.state_manager.save_begin_balances_week()
+                begin_balance_week = self.state_manager.get_begin_balance_week() 
                 self.notify_manager.send_notification(f"New trading week begins with begin balance of {begin_balance_week}", "New Week")
             setup_logger(LOG_PATH, self.connector_config.mode)
 
@@ -93,7 +124,7 @@ class BaseEngine(ABC):
                         symbol=asset.symbol,
                         strategy=strategy.strategy_name
                     ):                        
-                        if strategy.is_exit_signal(trade) and strategy.is_exit_allowed(trade):
+                        if strategy.is_exit_signal(trade, asset) and strategy.is_exit_allowed(trade):
                             try:
                                 strategy.execute_exit(trade, stopped=False)
                             except Exception as error:
@@ -121,7 +152,7 @@ class BaseEngine(ABC):
 
         self.today = PlatformTime.now().day
 
-    def _update_and_check_profit_targets(self, timestamp, last_update_timestamp):
+    def _update_and_check_profit_targets(self, timestamp: int, last_update_timestamp: int) -> int:
         """Update daily profit if the interval has elapsed since last update."""
         if timestamp - last_update_timestamp < 60:
             return last_update_timestamp
@@ -134,13 +165,12 @@ class BaseEngine(ABC):
             account_risk_enabled = risk_manager.get_account_risk_enabled() if risk_manager else False
             begin_balance = self.state_manager.get_begin_balance()
 
-            #backtester mode uses simulated balance from summary writer
             backtest_deposit = self.backtester_config.backtest_deposit or 100000.0
             balance_info = self.summary_writer.get_balance_info(backtest_deposit)
             floating_profit = self.state_manager.get_floating_profit()
-            new_balance = balance_info["balance"]   
+            new_balance = balance_info["balance"]
             new_equity = new_balance + floating_profit
-          
+
             self.account.set_balance(new_balance)
             self.account.set_equity(new_equity)
             equity = self.account.get_equity()
@@ -153,35 +183,36 @@ class BaseEngine(ABC):
             account_profit_level = self.risk_manager.get_account_profit_level()
             target_reached = self.state_manager.get_target_reached()
 
-            take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled else False
-            stop_loss_reached = equity - begin_balance  <= account_stop_loss if account_risk_enabled else False  
+            take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled and begin_balance > 0 else False
+            stop_loss_reached = equity - begin_balance  <= account_stop_loss if account_risk_enabled and begin_balance > 0 else False  
 
             if not break_even_reached and begin_balance > 0:
                 break_even_reached = equity - begin_balance >= account_break_even if account_risk_enabled else False  
                 if break_even_reached:
                     self.risk_manager.update_account_stop_loss(account_profit_level)
-                    self.notify_manager.send_notification("Break-even level reached. Adjusting account stop loss.", "Break-Even Hit") 
-                    logger.info("Break-even level reached. Adjusting account stop loss.") 
+                    self.notify_manager.send_notification("Break-even level reached. Adjusting account stop loss.", "Break-Even Hit")
+                    logger.info("Break-even level reached. Adjusting account stop loss.")
 
             if not weekly_profit_reached and begin_balance_week > 0:
                 weekly_profit_reached = equity - begin_balance_week >= account_take_profit_week if account_risk_enabled else False
                 if weekly_profit_reached:
                     self.notify_manager.send_notification(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.", "Weekly Target Hit", 1)
-                    logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")        
+                    logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")
 
             if not target_reached:
                 target_reached = take_profit_reached or stop_loss_reached or weekly_profit_reached
                 if target_reached:
                     logger.info(f"Daily profit reached: {target_reached}. Trading will resume next trading day.")
                     self.notify_manager.send_notification(f"Daily profit reached: {target_reached}. Trading will resume next trading day.", "Daily Target Hit", 1)
-  
+
             self.state_manager.save_account_snapshot(equity, balance, target_reached, break_even_reached, weekly_profit_reached)
         except Exception as error:
             logger.warning(f"Failed to update profit: {error}")
 
         return timestamp
 
-    def _periodic_news_calendar_refresh(self, timestamp, last_news_refresh_update):
+    def _periodic_news_calendar_refresh(self, timestamp: int, last_news_refresh_update: int) -> int:
+        """Refresh news calendar if 24 hours have elapsed since last update."""
         if timestamp - last_news_refresh_update >= 86400:
             try:
                 self.news_manager.refresh()
@@ -191,6 +222,6 @@ class BaseEngine(ABC):
         return last_news_refresh_update
         
     @abstractmethod
-    def run(self):
+    def run(self) -> None:
         """Entry point for the engine execution loop."""
         pass

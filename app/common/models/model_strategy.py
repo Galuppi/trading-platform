@@ -88,3 +88,4 @@ class SentimentSignal:
     countsma4: Optional[int]
     countsma1: Optional[int]
     timestamp: Optional[str] = None
+    vix: Optional[float] = None

@@ -1,7 +1,7 @@
 name: TurnoverTuesday
 display_name: Turnover Tuesday 1.0
 enabled: true
-total_strategy_capital: 67500
+total_strategy_capital: 65000
 positioning: capital
 holiday_calendar: us
 

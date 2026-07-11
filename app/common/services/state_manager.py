@@ -377,8 +377,34 @@ class StateManager:
         for t in matching:
             if t.id > latest.id:
                 latest = t
+        return latest 
+
+    def get_last_open_trade(self, symbol: str) -> Optional[TradeRecord]:
+        matching_open = [t for t in self.get_all_trades()
+            if t.symbol == symbol and t.status.lower() == TRADE_STATUS_OPEN]
+        
+        if not matching_open:
+            return None
+        
+        latest = matching_open[0]
+        for trade in matching_open:
+            if trade.id > latest.id:
+                latest = trade             
         return latest
-    
+
+    def get_first_open_trade(self, symbol: str) -> Optional[TradeRecord]:
+        earliest = None
+        
+        for trade in self.get_all_trades():
+            if trade.symbol != symbol:
+                continue
+            if trade.status.lower() != TRADE_STATUS_OPEN:
+                continue
+                
+            if earliest is None or trade.id < earliest.id:
+                earliest = trade          
+        return earliest
+
     def get_last_closed_trade(self, symbol: str) -> Optional[TradeRecord]:
         closed_trades = [
             t for t in self.get_all_trades()

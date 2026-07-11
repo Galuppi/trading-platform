@@ -2,52 +2,17 @@ name: GenericCsv
 enabled: true
 
 assets:
-  - symbol: EURUSD
+  - symbol: US100.cash
     timeframe: M1
     date_from: 01-01-2023
     date_to: 31-12-2025
 
-  - symbol: XAUUSD
+  - symbol: US30.cash
     timeframe: M1
     date_from: 01-01-2023
     date_to: 31-12-2025
 
-  - symbol: USDJPY
-    timeframe: M1
-    date_from: 01-01-2023
-    date_to: 31-12-2025
-
-  - symbol: GBPUSD
-    timeframe: M1
-    date_from: 01-01-2023
-    date_to: 31-12-2025
-
-  - symbol: US30
-    timeframe: M1
-    date_from: 01-01-2023
-    date_to: 31-12-2025
-
-  - symbol: USTEC
-    timeframe: M1
-    date_from: 01-01-2023
-    date_to: 31-12-2025
-
-  - symbol: DE40
-    timeframe: M1
-    date_from: 01-01-2023
-    date_to: 31-12-2025
-
-  - symbol: BTCUSD
-    timeframe: M1
-    date_from: 01-01-2025
-    date_to: 31-12-2025
-
-  - symbol: XRPUSD
-    timeframe: M1
-    date_from: 01-01-2025
-    date_to: 31-12-2025
-
-  - symbol: ETHUSD
+  - symbol: US500.cash
     timeframe: M1
     date_from: 01-01-2023
     date_to: 31-12-2025

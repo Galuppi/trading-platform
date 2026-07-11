@@ -168,6 +168,17 @@ class PlatformTime:
         return PlatformTime.now().weekday() == (target_day - 1)
 
     @staticmethod
+    def is_within_weekday_range(open_day: int, close_day: int) -> bool:
+        current = PlatformTime.now().weekday()
+        start = open_day - 1
+        end   = close_day - 1
+
+        if start <= end:
+            return start <= current <= end
+        else:
+            return current >= start or current <= end
+ 
+    @staticmethod
     def is_within_market_hours(day: str, sessions: Dict[str, MarketSession]) -> bool:
         if day not in sessions:
             return False

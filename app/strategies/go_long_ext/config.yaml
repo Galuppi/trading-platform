@@ -1,7 +1,7 @@
 name: GoLongExt
 display_name: Go Long Ext 1.0
 enabled: true
-total_strategy_capital: 67500
+total_strategy_capital: 65000
 positioning: capital
 holiday_calendar: us
 
@@ -39,7 +39,7 @@ assets:
     range_size_restricted: false
     max_total_trades: 1
     max_buy_trades: 1
-    max_sell_trades: 0
-    percent_of_capital: 100
+    max_sell_trades: 1
+    percent_of_capital: 50
     
    

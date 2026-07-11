@@ -7,7 +7,7 @@ assets:
     date_from: 01-01-2023
     date_to: 31-12-2025
 
-  - symbol: US30
+  - symbol: US30.cash
     timeframe: H1
     date_from: 01-01-2023
     date_to: 31-12-2025

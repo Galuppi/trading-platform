@@ -9,6 +9,7 @@ from history.common.models.model_downloader import DownloaderConfig
 from history.common.config.paths import DATA_PATH
 from history.common.config.constants import DATETIME_FORMAT
 from history.base.base_history import History
+from history.base.base_connector import Connector
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class GenericCsvDownloader(Download):
         self.connector = None
         self.history: History = None
 
-    def attach_services(self, connector, history: History):
+    def attach_services(self, connector: Connector, history: History):
         self.connector = connector
         self.history = history
 
@@ -30,6 +31,7 @@ class GenericCsvDownloader(Download):
         logger.info(f"Starting downloads for {self.config.name}")
 
         for asset in self.config.assets:
+
             output_dir = DATA_PATH / asset.symbol
             output_dir.mkdir(parents=True, exist_ok=True)
 

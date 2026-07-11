@@ -41,9 +41,6 @@ class Mt5History(History):
         start_date: datetime,
         end_date: datetime
     ) -> pd.DataFrame:
-        if not mt5.initialize():
-            raise RuntimeError("MT5 initialization failed")
-
         mt5_timeframe = TIMEFRAME_MAP.get(timeframe)
         if mt5_timeframe is None:
             raise ValueError(f"Unsupported timeframe: {timeframe}")
@@ -74,8 +71,6 @@ class Mt5History(History):
                 all_data.append(batch)
 
             current_start = current_end
-
-        mt5.shutdown()
 
         if not all_data:
             raise RuntimeError(f"No data returned for {symbol} {timeframe}")
