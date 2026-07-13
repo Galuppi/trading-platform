@@ -1,6 +1,6 @@
-name: TurnoverTuesday
-display_name: Turnover Tuesday 1.0
-enabled: true
+name: MondayOpenSwing
+display_name: Monday Open Swing 1.0
+enabled: false
 total_strategy_capital: 65000
 positioning: capital
 holiday_calendar: us

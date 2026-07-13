@@ -77,15 +77,13 @@ class StrategyConfig:
         )
 
 @dataclass
-class SentimentSignal:
+class Signal:
     symbol: str
     category: Optional[str]
     sma24: Optional[float]
     sma4: Optional[float]
     sma1: Optional[float]
-    price: Optional[float]
     countsma24: Optional[int]
     countsma4: Optional[int]
     countsma1: Optional[int]
     timestamp: Optional[str] = None
-    vix: Optional[float] = None

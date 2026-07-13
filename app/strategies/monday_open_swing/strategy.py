@@ -9,7 +9,7 @@ from app.common.config.constants import TRADE_DIRECTION_BUY, TRADE_DIRECTION_SEL
 logger = logging.getLogger(__name__)
 
 
-class TurnoverTuesdayStrategy(Strategy):
+class MondayOpenSwingStrategy(Strategy):
     TRADE_DIRECTION = TRADE_DIRECTION_BUY
 
     def __init__(self, config: StrategyConfig):

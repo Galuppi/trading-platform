@@ -1,10 +1,10 @@
-name: Sentiment Cross
-display_name: Sentiment Cross 1.0
-enabled: true
-total_strategy_capital: 100000
+name: News Cross
+display_name: News Cross 1.0
+enabled: false
+total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
-signal_feed: "C:\\Apps\\SignalProvider\\signals\\signal.json"
+signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
 
 market_hours:
   sessions:
