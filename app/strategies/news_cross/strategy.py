@@ -14,7 +14,7 @@ from app.common.config.constants import TRADE_DIRECTION_SELL, TRADE_DIRECTION_BU
 
 logger = logging.getLogger(__name__)
 
-ACT_ON_NEWS_RELEASES = True
+ACT_ON_NEWS_RELEASES = False
 CLOSE_TRADES_ON_VIX_PAUSE = False
 VIX_PAUSE_THRESHOLD = 18.0
 TRADE_CATEGORY = "news" 
@@ -86,7 +86,7 @@ class NewsCrossStrategy(Strategy):
         if PlatformTime.now().time() > close_time:
             return None
 
-        last_closed_trade = self.state_manager.get_last_closed_trade(asset.symbol)
+        last_closed_trade = self.state_manager.get_last_closed_trade(asset.symbol, strategy=self.strategy_name)
         if last_closed_trade is not None:
             if last_closed_trade.exit_time is None:
                 logger.warning(f"Last closed trade ({last_closed_trade.id}) has no exit_time — skipping cooldown check")
@@ -103,7 +103,7 @@ class NewsCrossStrategy(Strategy):
         if self._is_vix_paused():
             return None
 
-        first_open_trade = self.state_manager.get_first_open_trade(asset.symbol)
+        first_open_trade = self.state_manager.get_first_open_trade(asset.symbol, strategy=self.strategy_name)
         first_open_trade_direction = first_open_trade.type if first_open_trade else None
         if self._is_buy_signal(signal, asset):
             if first_open_trade_direction != TRADE_DIRECTION_BUY:
@@ -145,7 +145,7 @@ class NewsCrossStrategy(Strategy):
             logger.warning(f"Closing {trade.symbol} — VIX pause active")
             return True
 
-        first_open_trade = self.state_manager.get_first_open_trade(trade.symbol)
+        first_open_trade = self.state_manager.get_first_open_trade(trade.symbol, strategy=self.strategy_name)
         first_open_trade_direction = first_open_trade.type if first_open_trade else None
         if self._is_buy_signal(signal, trade):
             if first_open_trade_direction == TRADE_DIRECTION_SELL:

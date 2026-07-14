@@ -392,23 +392,27 @@ class StateManager:
                 latest = trade             
         return latest
 
-    def get_first_open_trade(self, symbol: str) -> Optional[TradeRecord]:
+    def get_first_open_trade(self, symbol: str, strategy: Optional[str] = None) -> Optional[TradeRecord]:
         earliest = None
-        
+
         for trade in self.get_all_trades():
             if trade.symbol != symbol:
                 continue
             if trade.status.lower() != TRADE_STATUS_OPEN:
                 continue
-                
+            if strategy is not None and trade.strategy != strategy:
+                continue
+
             if earliest is None or trade.id < earliest.id:
-                earliest = trade          
+                earliest = trade
         return earliest
 
-    def get_last_closed_trade(self, symbol: str) -> Optional[TradeRecord]:
+    def get_last_closed_trade(self, symbol: str, strategy: Optional[str] = None) -> Optional[TradeRecord]:
         closed_trades = [
             t for t in self.get_all_trades()
-            if t.symbol == symbol and t.status.lower() == TRADE_STATUS_CLOSED
+            if t.symbol == symbol
+            and t.status.lower() == TRADE_STATUS_CLOSED
+            and (strategy is None or t.strategy == strategy)
         ]
 
         if not closed_trades:
