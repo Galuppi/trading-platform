@@ -55,6 +55,10 @@ class DashboardManager:
             <div class="meta">Mode: {mode} • {date} • Local: {local_time} • Platform: {platform_time} • UTC: {utc_time}</div>
             {balances_html}
             <div class="section">
+                <h3>Market Volatility (VIX)</h3>
+                {vix_html}
+            </div>
+            <div class="section">
                 <h3>Strategies</h3>
                 {strategies_html}
             </div>
@@ -97,7 +101,6 @@ class DashboardManager:
         local_time = PlatformTime.local_now().strftime("%H:%M")
         platform_time = PlatformTime.now().strftime("%H:%M")
         utc_time = PlatformTime.local_now_utc().strftime("%H:%M")
-
         strategies_html = ""
         for strategy in strategies:
             strategy_name = strategy.strategy_display_name
@@ -107,7 +110,6 @@ class DashboardManager:
             is_market_open = strategy.is_market_open()
             is_holiday = strategy.is_holiday()
             market_class = "market-open" if is_market_open else "market-closed"
-
             strategies_html += f"""
             <div class="strategy">
                 <div><span class="label">Strategy:</span> {strategy_name}</div>
@@ -116,7 +118,6 @@ class DashboardManager:
                 <div><span class="label">Market open:</span> <span class="{market_class}">{'Yes' if is_market_open else 'No'}</span></div>
                 <div><span class="label">Holiday:</span> {'Yes' if is_holiday else 'No'}</div>
             </div>"""
-
         last_event = state_manager.get_last_event()
         if last_event:
             last_event_html = f"""
@@ -128,11 +129,23 @@ class DashboardManager:
         else:
             last_event_html = "<div class='item'>No event</div>"
 
+        vix_data = state_manager.get_vix()
+        if vix_data and vix_data.get("value") is not None:
+            vix_class = "profit-neg" if vix_data.get("pause_active") else "profit-pos"
+            pause_class = "warning" if vix_data.get("pause_active") else ""
+            vix_html = f"""
+            <div class="item"><span class="label">VIX:</span> <span class="{vix_class}">{vix_data['value']}</span></div>
+            <div class="item"><span class="label">Threshold:</span> {vix_data.get('threshold')}</div>
+            <div class="item"><span class="label">Pause active:</span> <span class="{pause_class}">{'Yes' if vix_data.get('pause_active') else 'No'}</span></div>
+            <div class="item"><span class="label">Updated:</span> {vix_data.get('updated_at')}</div>
+            """
+        else:
+            vix_html = "<div class='item'>No VIX data</div>"
+
         if mode == MODE_BACKTEST:
             balances_html = self._build_backtest_balances(backtester_config, summary_writer)
         else:
             balances_html = self._build_live_balances(state_manager)
-
         return self.HTML_TEMPLATE.format(
             mode=mode.capitalize(),
             date=current_date,
@@ -140,6 +153,7 @@ class DashboardManager:
             platform_time=platform_time,
             strategies_html=strategies_html,
             balances_html=balances_html,
+            vix_html=vix_html,
             last_event_html=last_event_html,
             timestamp=timestamp,
             utc_time=utc_time,

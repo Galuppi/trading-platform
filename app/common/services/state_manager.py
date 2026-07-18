@@ -368,28 +368,36 @@ class StateManager:
             return last_tick_info.get("last_tick")
         return None
 
-    def get_last_trade(self, symbol: str) -> Optional[TradeRecord]:
-        matching = [t for t in self.get_all_trades() if t.symbol == symbol]
+    def get_last_trade(self, symbol: str, strategy: Optional[str] = None) -> Optional[TradeRecord]:
+        matching = [
+            t for t in self.get_all_trades()
+            if t.symbol == symbol
+            and (strategy is None or t.strategy == strategy)
+        ]
         if not matching:
             return None
-        
+
         latest = matching[0]
         for t in matching:
             if t.id > latest.id:
                 latest = t
-        return latest 
+        return latest
 
-    def get_last_open_trade(self, symbol: str) -> Optional[TradeRecord]:
-        matching_open = [t for t in self.get_all_trades()
-            if t.symbol == symbol and t.status.lower() == TRADE_STATUS_OPEN]
-        
+    def get_last_open_trade(self, symbol: str, strategy: Optional[str] = None) -> Optional[TradeRecord]:
+        matching_open = [
+            t for t in self.get_all_trades()
+            if t.symbol == symbol
+            and t.status.lower() == TRADE_STATUS_OPEN
+            and (strategy is None or t.strategy == strategy)
+        ]
+
         if not matching_open:
             return None
-        
+
         latest = matching_open[0]
         for trade in matching_open:
             if trade.id > latest.id:
-                latest = trade             
+                latest = trade
         return latest
 
     def get_first_open_trade(self, symbol: str, strategy: Optional[str] = None) -> Optional[TradeRecord]:
@@ -481,3 +489,19 @@ class StateManager:
                 total_profit += trade.profit
                 
         return round(total_profit, 2)
+    
+    def save_vix(self, value: Optional[float], threshold: Optional[float] = None) -> None:
+        self.state["_vix"] = {
+            "value": value,
+            "threshold": threshold,
+            "pause_active": bool(value is not None and threshold is not None and value > threshold),
+            "updated_at": PlatformTime.now().strftime(DATETIME_FORMAT),
+        }
+        self.save()
+
+    def get_vix(self) -> Optional[Dict[str, Any]]:
+        data = self.state.get("_vix")
+        if not isinstance(data, dict):
+            return None
+        return data
+    

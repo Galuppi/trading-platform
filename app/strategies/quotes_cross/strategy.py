@@ -27,6 +27,7 @@ class QuotesCrossStrategy(Strategy):
         self.vix: Optional[float] = None
         self.last_load: Optional[float] = None
         self.resume_trading: bool = False
+        self._vix_pause_logged: bool = False
 
     def initialize(self) -> None:
         for asset in self.assets:
@@ -38,12 +39,17 @@ class QuotesCrossStrategy(Strategy):
         return self.signals.get(signal_symbol)
 
     def _is_vix_paused(self) -> bool:
-        if self.vix is None:
+            if self.vix is None:
+                return False
+            if self.vix > VIX_PAUSE_THRESHOLD:
+                if not self._vix_pause_logged:
+                    logger.warning(f"VIX pause active ({self.vix}) > {VIX_PAUSE_THRESHOLD}")
+                    self._vix_pause_logged = True
+                return True
+            if self._vix_pause_logged:
+                logger.info(f"VIX pause cleared ({self.vix}) <= {VIX_PAUSE_THRESHOLD}")
+                self._vix_pause_logged = False
             return False
-        if self.vix > VIX_PAUSE_THRESHOLD:
-            logger.warning(f"VIX pause active ({self.vix}) > {VIX_PAUSE_THRESHOLD}")
-            return True
-        return False
 
     def _is_buy_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
         if not signal or signal.sma24 is None or signal.sma4 is None:
@@ -200,6 +206,8 @@ class QuotesCrossStrategy(Strategy):
                 return
 
             self.vix = signal_payload.get("vix")
+            if self.state_manager is not None:
+                self.state_manager.save_vix(self.vix, VIX_PAUSE_THRESHOLD)
 
             parsed_signals = []
             for signal_entry in signal_payload.get(TRADE_CATEGORY, []):

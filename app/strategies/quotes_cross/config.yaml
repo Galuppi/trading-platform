@@ -82,3 +82,16 @@ assets:
     max_buy_trades: 5
     max_sell_trades: 5
     percent_of_capital: 10
+
+  - symbol: XAUUSD
+    open_min: 65
+    open_day: 7
+    close_day: 5
+    close_min: 1400
+    risk_percent: 1.5
+    reward_risk_ratio: 2.5
+    signal_symbol: XAUUSD
+    max_total_trades: 10
+    max_buy_trades: 5
+    max_sell_trades: 5
+    percent_of_capital: 10
