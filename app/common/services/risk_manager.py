@@ -1,3 +1,5 @@
+"""Manages account-level risk thresholds (take profit, stop loss, break-even)."""
+
 from __future__ import annotations
 
 import logging
@@ -10,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class RiskManager:
+    """Manages account-level risk thresholds (take profit, stop loss, break-even)."""
     def __init__(self) -> None:
         self._risk: Optional[AccountRisk] = None
 

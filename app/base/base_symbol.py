@@ -1,10 +1,14 @@
+"""Abstract interface for retrieving symbol/instrument data and pricing from a broker."""
+
 
 from abc import ABC, abstractmethod
+from typing import Any
 from app.common.models.model_symbol import Range
 from app.common.config.constants import TIMEFRAME_M1
 
 
 class Symbol(ABC):
+    """Abstract interface for retrieving symbol/instrument data and pricing."""
     @abstractmethod
     def get_ask_price(self, symbol: str) -> float:
         """Return the current ask price for the given symbol."""
@@ -26,7 +30,7 @@ class Symbol(ABC):
         pass
 
     @abstractmethod
-    def get_symbol_info(self, symbol: str):
+    def get_symbol_info(self, symbol: str) -> Any:
         """Retrieve detailed symbol metadata from the broker or platform."""
         pass
 
@@ -84,11 +88,6 @@ class Symbol(ABC):
         timeframe: str = TIMEFRAME_M1,
     ) -> Range:
         """Return the high-low price range for the symbol within the given time window."""
-        pass
-
-    @abstractmethod
-    def get_point_size(self, symbol: str) -> float:
-        """Return the point size for the given symbol."""
         pass
 
     @abstractmethod

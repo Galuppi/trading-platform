@@ -1,11 +1,14 @@
+"""Configuration model for a platform connector (MT5 or cTrader)."""
+
 from dataclasses import dataclass
 from typing import Optional
 
 
 @dataclass
 class ConnectorConfig:
+    """Configuration for connecting to a trading platform (MT5 or cTrader)."""
     type: str
-    mode: str
+    environment: str
     server: str
     timezone: str
     offset: int

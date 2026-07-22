@@ -1,3 +1,5 @@
+"""Simple long-only strategy that enters a single directional trade per session."""
+
 import logging
 
 from app.base.base_strategy import Strategy
@@ -11,10 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class GoLongStrategy(Strategy):
+    """Simple long-only strategy that enters a single directional trade per session."""
     def __init__(self, config: StrategyConfig):
         super().__init__(config=config)
 
-    def initialize(self):
+    def initialize(self) -> None:
         for asset in self.assets:
             if not self.is_valid_symbol(asset.symbol):
                 raise ValueError(
@@ -36,7 +39,7 @@ class GoLongStrategy(Strategy):
             return TRADE_DIRECTION_BUY
         return None
 
-    def is_exit_signal(self, trade: TradeRecord) -> bool:
+    def is_exit_signal(self, trade: TradeRecord, asset_config: AssetConfig) -> bool:
         if self.state_manager.get_target_reached():
             return True
 
@@ -45,10 +48,6 @@ class GoLongStrategy(Strategy):
         
         if trade.strategy != self.strategy_name:
             return False
-            
-        for asset in self.assets:
-            if asset.symbol == trade.symbol:
-                return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0)
 
-        return False
+        return PlatformTime.minutes_since_midnight() >= (asset_config.close_min or 0)
 

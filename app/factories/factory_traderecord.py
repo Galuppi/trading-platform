@@ -1,11 +1,13 @@
-from app.common.models.model_trade import TradeRecord
+"""Builds a TradeRecord from an order result and the originating order."""
+
+from app.common.models.model_trade import TradeRecord, OrderResult, OrderRequest
 from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import TRADE_STATUS_OPEN
 
 
 def create_trade_record(
-    result,
-    order,
+    result: OrderResult,
+    order: OrderRequest,
     entry_price: float,
     strategy_name: str
 ) -> TradeRecord:

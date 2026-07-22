@@ -1,3 +1,5 @@
+"""Monday Open Swing strategy: enters at Monday's open and exits Tuesday close."""
+
 import logging
 
 from app.base.base_strategy import Strategy
@@ -10,12 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class MondayOpenSwingStrategy(Strategy):
+    """Enters at Monday's open and exits Tuesday close."""
     TRADE_DIRECTION = TRADE_DIRECTION_BUY
 
     def __init__(self, config: StrategyConfig):
         super().__init__(config=config)
 
-    def initialize(self):
+    def initialize(self) -> None:
         for asset in self.assets:
             if not self.is_valid_symbol(asset.symbol):
                 raise ValueError(
@@ -41,7 +44,7 @@ class MondayOpenSwingStrategy(Strategy):
 
         return None
 
-    def is_exit_signal(self, trade: TradeRecord) -> bool:
+    def is_exit_signal(self, trade: TradeRecord, asset_config: AssetConfig) -> bool:
         if self.state_manager.get_target_reached():
             return True
 
@@ -50,13 +53,9 @@ class MondayOpenSwingStrategy(Strategy):
         
         if trade.strategy != self.strategy_name:
             return False
-            
-        for asset in self.assets:
-            if asset.symbol == trade.symbol:
-                if not PlatformTime.is_matching_weekday(asset.close_day or 3):
-                    return False
-                return PlatformTime.minutes_since_midnight() >= (asset.close_min or 0)
 
-        return False
+        if not PlatformTime.is_matching_weekday(asset_config.close_day or 3):
+            return False
+        return PlatformTime.minutes_since_midnight() >= (asset_config.close_min or 0)
 
   

@@ -1,13 +1,17 @@
+"""MetaTrader 5 implementation of the Connector interface."""
+
 import MetaTrader5 as mt5
 import logging
 from app.base.base_connector import Connector
 from app.common.models.model_connector import ConnectorConfig
+from app.common.services.state_manager import StateManager
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 class Mt5Connector(Connector):
-    def __init__(self, config: ConnectorConfig):
+    """MetaTrader 5 implementation of the Connector interface."""
+    def __init__(self, config: ConnectorConfig, state_manager: StateManager = None):
         if config.login is None or config.password is None:
             raise ValueError("MT5 requires 'login' and 'password' in ConnectorConfig.")
 

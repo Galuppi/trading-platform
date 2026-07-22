@@ -1,8 +1,22 @@
+"""Discovers, configures, and instantiates all enabled strategies."""
+
 import importlib
 import yaml
 import logging
 from pathlib import Path
+from typing import List, Iterator, Tuple, Type
 
+from app.base.base_strategy import Strategy
+from app.base.base_connector import Connector
+from app.base.base_account import Account
+from app.base.base_symbol import Symbol
+from app.base.base_trade import Trade
+from app.common.services.calculator import Calculator
+from app.common.services.state_manager import StateManager
+from app.common.services.news_manager import NewsManager
+from app.common.services.risk_manager import RiskManager
+from app.common.services.vix_manager import VixManager
+from app.common.services.pushover_manager import PushoverManager
 from app.common.config.paths import STRATEGY_PATH
 from app.common.models.model_strategy import (
     StrategyConfig,
@@ -47,10 +61,12 @@ def strategy_registry_config(config_path: Path) -> StrategyConfig:
         assets=assets,
         enabled=raw_config.get("enabled", True),
         signal_feed=raw_config.get("signal_feed", ""),
+        vix_pause_enabled=raw_config.get("vix_pause_enabled", False),
+        vix_threshold=raw_config.get("vix_threshold"),
     )
 
 
-def discover_strategies():
+def discover_strategies() -> Iterator[Tuple[Path, Path, Path]]:
     for item in STRATEGY_PATH.iterdir():
         if item.is_dir() and not item.name.startswith("__"):
             strategy_file = item / "strategy.py"
@@ -63,7 +79,7 @@ def discover_strategies():
                 )
 
 
-def strategy_registry_class(module_path: str, class_name: str):
+def strategy_registry_class(module_path: str, class_name: str) -> Type[Strategy]:
     module = importlib.import_module(module_path)
     if not hasattr(module, class_name):
         raise ImportError(f"Class '{class_name}' not found in '{module_path}'")
@@ -71,16 +87,17 @@ def strategy_registry_class(module_path: str, class_name: str):
 
 
 def strategy_registry(
-    connector,
-    account,
-    symbol,
-    trader,
-    calculator,
-    state_manager,
-    news_manager,
-    risk_manager,
-    notify_manager,
-) -> list:
+    connector: Connector,
+    account: Account,
+    symbol: Symbol,
+    trader: Trade,
+    calculator: Calculator,
+    state_manager: StateManager,
+    news_manager: NewsManager,
+    risk_manager: RiskManager,
+    vix_manager: VixManager,
+    notify_manager: PushoverManager,
+) -> List[Strategy]:
     strategies = []
 
     for item, _, config_file in discover_strategies():
@@ -108,6 +125,7 @@ def strategy_registry(
                 state_manager=state_manager,
                 news_manager=news_manager,
                 risk_manager=risk_manager,
+                vix_manager=vix_manager,
                 notify_manager=notify_manager,
             )
             

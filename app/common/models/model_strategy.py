@@ -1,3 +1,5 @@
+"""Data models representing strategy configuration, market hours, assets, and signals."""
+
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Literal
 
@@ -6,17 +8,20 @@ from app.common.config.constants import POSITIONING_CAPITAL
 
 @dataclass
 class MarketSession:
+    """Open/close time window for a single trading session."""
     open_time: str  # Format: "HH:MM"
     close_time: str  # Format: "HH:MM"
 
 
 @dataclass
 class MarketHours:
+    """Market session hours keyed by day of week."""
     sessions: Dict[str, MarketSession]
 
 
 @dataclass
 class AssetConfig:
+    """Per-symbol configuration for a strategy (limits, risk, range settings)."""
     symbol: str
     open_min: int
     close_min: int
@@ -40,6 +45,7 @@ class AssetConfig:
 
 @dataclass
 class StrategyConfig:
+    """Full configuration for a strategy, loaded from its config.yaml."""
     name: str
     display_name: str
     total_strategy_capital: float
@@ -51,6 +57,8 @@ class StrategyConfig:
     enabled: bool = True
     signal_feed: Optional[str] = None
     symbol_mapping_file: Optional[str] = None
+    vix_pause_enabled: bool = False
+    vix_threshold: Optional[float] = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "StrategyConfig":
@@ -78,6 +86,7 @@ class StrategyConfig:
 
 @dataclass
 class Signal:
+    """A computed entry/exit signal for a symbol."""
     symbol: str
     category: Optional[str]
     sma24: Optional[float]

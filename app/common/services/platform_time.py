@@ -1,15 +1,15 @@
+"""Centralized, timezone-aware time utility used throughout the application."""
+
 import time as _time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date, time
 from zoneinfo import ZoneInfo
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from functools import lru_cache
 
 from app.common.config.constants import (
     DATETIME_FORMAT,
     DATE_FORMAT,
     TIME_FORMAT,
-    MODE_LIVE,
-    MODE_BACKTEST,
 )
 from app.common.models.model_strategy import MarketSession
 
@@ -18,9 +18,8 @@ def _cached_strptime(value: str, fmt: str) -> datetime:
     return datetime.strptime(value, fmt)
 
 class PlatformTime:
+    """Centralized, timezone-aware time utility used throughout the application."""
     _platform_tz: ZoneInfo = ZoneInfo("UTC")
-    _mode: str = MODE_LIVE
-    _backtest_timestamp: Optional[float] = None
     _offset: int = 0
 
     @staticmethod
@@ -30,18 +29,10 @@ class PlatformTime:
     @staticmethod
     def set_offset(tz_offset: int) -> None:
         PlatformTime._offset = tz_offset 
- 
-    @staticmethod
-    def set_mode(mode: str) -> None:
-        PlatformTime._mode = mode
 
     @staticmethod
-    def set_backtest_timestamp(ts: float) -> None:
-        PlatformTime._backtest_timestamp = ts
-
-    @staticmethod
-    def clear_backtest_timestamp() -> None:
-        PlatformTime._backtest_timestamp = None
+    def get_offset() -> float:
+        return PlatformTime._offset
 
     @staticmethod
     def now() -> datetime:
@@ -53,14 +44,10 @@ class PlatformTime:
 
     @staticmethod
     def timestamp() -> float:
-        if PlatformTime._is_backtest():
-            if PlatformTime._backtest_timestamp is None:
-                raise RuntimeError("Backtest timestamp is not set in backtest mode.")
-            return PlatformTime._backtest_timestamp
         return _time.time()
 
     @staticmethod
-    def date():
+    def date() -> date:
         return PlatformTime.now().date()
 
     # @staticmethod
@@ -105,7 +92,7 @@ class PlatformTime:
         return datetime.strptime(s, DATETIME_FORMAT).replace(tzinfo=PlatformTime._platform_tz)
 
     @staticmethod
-    def timedelta(**kwargs) -> timedelta:
+    def timedelta(**kwargs: float) -> timedelta:
         return timedelta(**kwargs)
 
     @staticmethod
@@ -117,16 +104,16 @@ class PlatformTime:
         return datetime.now(tz=timezone.utc)
 
     @staticmethod
-    def today():
+    def today() -> date:
         return PlatformTime.now().date()
 
     @staticmethod
-    def combine(date_obj, time_obj) -> datetime:
+    def combine(date_obj: date, time_obj: time) -> datetime:
         dt = datetime.combine(date_obj, time_obj)
         return dt.replace(tzinfo=PlatformTime._platform_tz)
 
     @staticmethod
-    def replace(dt: datetime, **kwargs) -> datetime:
+    def replace(dt: datetime, **kwargs: Any) -> datetime:
         return dt.replace(**kwargs)
 
     @staticmethod
@@ -152,7 +139,7 @@ class PlatformTime:
         return dt.hour * 60 + dt.minute
 
     @staticmethod
-    def compute_time_from_minutes(minutes: int):
+    def compute_time_from_minutes(minutes: int) -> time:
         return (
             PlatformTime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             + PlatformTime.timedelta(minutes=minutes)
@@ -197,17 +184,7 @@ class PlatformTime:
         return datetime.fromisoformat(dt_str.replace("Z", "")).strftime("%Y.%m.%d %H:%M:%S")
 
     @staticmethod
-    def _is_backtest() -> bool:
-        return PlatformTime._mode == MODE_BACKTEST
-
-    @staticmethod
     def _get_now() -> datetime:
-        if PlatformTime._is_backtest():
-            if PlatformTime._backtest_timestamp is None:
-                raise RuntimeError("Backtest timestamp is not set in backtest mode.")
-            dt = datetime.fromtimestamp(PlatformTime._backtest_timestamp, tz=timezone.utc)
-            return dt.astimezone(PlatformTime._platform_tz)
-
         base_dt = datetime.now(tz=PlatformTime._platform_tz)
         return base_dt + timedelta(hours=PlatformTime._offset)
 

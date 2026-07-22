@@ -1,6 +1,7 @@
+"""Sends throttled push notifications via the Pushover API."""
+
 from __future__ import annotations
 import logging
-from turtle import title
 import urllib.request
 import urllib.parse
 from typing import Optional
@@ -9,13 +10,13 @@ from app.common.services.platform_time import PlatformTime
 logger = logging.getLogger(__name__)
 
 class PushoverManager:
+    """Sends throttled push notifications via the Pushover API."""
     def __init__(
         self,
         app_token: str,
         user_key: str,
         server_url: str,
         title: str = "Notification",
-        is_backtest: bool = False,
     ) -> None:
         self.app_token = app_token.strip()
         self.user_key = user_key.strip()
@@ -24,7 +25,6 @@ class PushoverManager:
         self.last_message_timestamp = 0
         self.cooldown_minutes = 10
         self.last_message_text = ""
-        self.is_backtest = is_backtest
 
     def _send(
         self,
@@ -104,9 +104,6 @@ class PushoverManager:
         retry: Optional[int] = None,
         expire: Optional[int] = None,
     ) -> bool:
-        if self.is_backtest:
-            return False
-        
         notification_sent_timestamp = PlatformTime.now().timestamp()
         if (
             notification_sent_timestamp - self.last_message_timestamp < 60 * self.cooldown_minutes

@@ -14,6 +14,7 @@ TradeLike = Union[TradeRecord, Dict[str, Any]]
 
 
 class StateManager:
+    """Persists and queries trade state, account snapshots, and daily risk status."""
     def __init__(self, state_path: Path, account: Account, persist_enabled: bool = True) -> None:
         self.state_path = state_path
         self.persist_enabled = persist_enabled
@@ -366,6 +367,17 @@ class StateManager:
         last_tick_info = self.state.get("_server_last_tick")
         if isinstance(last_tick_info, dict):
             return last_tick_info.get("last_tick")
+
+    def save_ctrader_refresh_token(self, refresh_token: str) -> None:
+        """Save the current cTrader refresh token; persists immediately."""
+        self.state["_ctrader_refresh_token"] = {"refresh_token": refresh_token}
+        self.save()
+
+    def get_ctrader_refresh_token(self) -> Optional[str]:
+        """Return the last persisted cTrader refresh token, if any."""
+        token_info = self.state.get("_ctrader_refresh_token")
+        if isinstance(token_info, dict):
+            return token_info.get("refresh_token")
         return None
 
     def get_last_trade(self, symbol: str, strategy: Optional[str] = None) -> Optional[TradeRecord]:
@@ -489,19 +501,4 @@ class StateManager:
                 total_profit += trade.profit
                 
         return round(total_profit, 2)
-    
-    def save_vix(self, value: Optional[float], threshold: Optional[float] = None) -> None:
-        self.state["_vix"] = {
-            "value": value,
-            "threshold": threshold,
-            "pause_active": bool(value is not None and threshold is not None and value > threshold),
-            "updated_at": PlatformTime.now().strftime(DATETIME_FORMAT),
-        }
-        self.save()
-
-    def get_vix(self) -> Optional[Dict[str, Any]]:
-        data = self.state.get("_vix")
-        if not isinstance(data, dict):
-            return None
-        return data
     

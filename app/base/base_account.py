@@ -1,9 +1,12 @@
+"""Abstract interface for retrieving account balance, equity, margin, and trade history."""
+
 from abc import ABC, abstractmethod
 from app.common.models.model_trade import OrderRequest, TradeRecord
 from typing import List, Optional
 
 
 class Account(ABC):
+    """Abstract interface for retrieving account balance, equity, margin, and trade history."""
     @abstractmethod
     def get_balance(self) -> float:
         """Return the current account balance."""
@@ -30,6 +33,11 @@ class Account(ABC):
         pass
 
     @abstractmethod
+    def get_slippage_per_lot(self) -> float:
+        """Return the slippage per lot."""
+        pass
+
+    @abstractmethod
     def get_free_margin(self, symbol: str) -> float:
         """Return the amount of free margin available."""
         pass
@@ -45,7 +53,7 @@ class Account(ABC):
         pass
 
     @abstractmethod
-    def get_account_number(self, backtest_config=None) -> int:
+    def get_account_number(self) -> int:
         """Return the trading account number."""
         pass
 

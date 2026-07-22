@@ -1,18 +1,21 @@
+"""Live trading runtime loop: connects, runs strategies, and reports status."""
+
 import logging
 
 from app.common.services.platform_time import PlatformTime
-from app.common.config.constants import MODE_LIVE
 from app.base.base_engine import BaseEngine
 
 logger = logging.getLogger(__name__)
 
 class Engine(BaseEngine):
-    def run(self):
+    """Live trading runtime loop: connects, runs strategies, and reports status."""
+    def run(self) -> None:
         self.initialize()
         PlatformTime.sleep(1)
-        self.dashboard_manager.print_status_report(self.strategies, self.state_manager, MODE_LIVE, log_to_terminal=True)
+        self.dashboard_manager.print_status_report(self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True)
         last_balances_update = 0
         last_news_refresh_update = 0
+        last_vix_refresh_update = 0
 
         start_engine_timestamp =PlatformTime.timestamp()
         if self._update_and_check_profit_targets(start_engine_timestamp, 0) > 0:
@@ -51,9 +54,10 @@ class Engine(BaseEngine):
                 closed_tickets = self.account.get_closed_tickets()
                 self.sync_manager.sync_tickets_with_broker(closed_tickets)
                 self.state_manager.save_server_last_tick(current_tick_timestamp)
+                last_vix_refresh_update = self._periodic_vix_refresh(current_timestamp, last_vix_refresh_update)
                 last_news_refresh_update = self._periodic_news_calendar_refresh(current_timestamp, last_news_refresh_update)
                 last_balances_update = self._update_and_check_profit_targets(current_timestamp, last_balances_update)                                             
-                self.dashboard_manager.print_status_report(self.strategies, self.state_manager, MODE_LIVE, log_to_terminal=True)
+                self.dashboard_manager.print_status_report(self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True)
 
                 self._run_strategies()
               

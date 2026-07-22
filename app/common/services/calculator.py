@@ -1,3 +1,6 @@
+"""Pure trade math: position sizing, stop loss, profit, and capital allocation calculations."""
+
+import logging
 from typing import Optional
 
 from app.common.models.model_trade import OrderRequest, ProfitResult, TradeRecord
@@ -7,9 +10,11 @@ from app.base.base_account import Account
 from app.common.models.model_strategy import AssetConfig
 from app.common.models.model_strategy import StrategyConfig
 from app.common.config.constants import TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
-from app.common.models.model_backtest import BacktestConfig
+
+logger = logging.getLogger(__name__)
 
 class Calculator():
+    """Pure trade math: position sizing, stop loss, profit, and capital allocation."""
     def __init__(
         self,
         symbol: Symbol,
@@ -108,7 +113,8 @@ class Calculator():
         order: OrderRequest,
         range_stop_loss: bool = False,
         range_open_min: Optional[int] = None,
-        range_close_min: Optional[int] = None
+        range_close_min: Optional[int] = None,
+        cached_range: Optional[Range] = None,
     ) -> int:
         tick_size = self.symbol.get_tick_size(order.symbol)
         if tick_size <= 0:
@@ -126,16 +132,33 @@ class Calculator():
             return 0.0
 
         if range_stop_loss:
-            if range_open_min is None or range_close_min is None:
-                return 0.0
+            # Prefer a range the strategy already fetched (e.g. via its
+            # periodic set_range() refresh, which is what actually detected
+            # this entry signal) over triggering a second, redundant network
+            # round-trip right here at order-build time -- the busiest
+            # possible moment for the connector, and previously a silent
+            # single point of failure for the whole stop loss.
+            if cached_range is not None and cached_range.range_set and cached_range.high > 0 and cached_range.low > 0:
+                range_ = cached_range
+            else:
+                if range_open_min is None or range_close_min is None:
+                    return 0.0
 
-            try:
-                range_ = self.symbol.get_high_low_range(order.symbol, range_open_min, range_close_min)
-            except Exception:
-                return 0.0
+                try:
+                    range_ = self.symbol.get_high_low_range(order.symbol, range_open_min, range_close_min)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to fetch range for {order.symbol} while calculating stop loss "
+                        f"(no cached range was available to fall back on): {e}"
+                    )
+                    return 0.0
 
-            if range_.high <= 0 or range_.low <= 0:
-                return 0.0
+                if range_.high <= 0 or range_.low <= 0:
+                    logger.warning(
+                        f"Fetched range for {order.symbol} was invalid (high={range_.high}, "
+                        f"low={range_.low}) while calculating stop loss."
+                    )
+                    return 0.0
 
             stop_distance = (
                 price - range_.low
@@ -144,6 +167,11 @@ class Calculator():
             )
 
             if stop_distance <= 0:
+                logger.warning(
+                    f"Computed non-positive stop distance for {order.symbol} "
+                    f"(price={price}, range_high={range_.high}, range_low={range_.low}, "
+                    f"direction={order.direction}) -- stop loss will be 0."
+                )
                 return 0.0
 
             stop_loss_points = stop_distance / tick_size
@@ -160,7 +188,7 @@ class Calculator():
 
         return max(stop_loss_points_int, 0)
 
-    def recalculate_range(self, range_: Range, price: float):
+    def recalculate_range(self, range_: Range, price: float) -> None:
         if range_.range_set:
             return
 

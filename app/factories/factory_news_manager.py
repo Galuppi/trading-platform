@@ -1,3 +1,5 @@
+"""Builds the NewsManager instance."""
+
 import logging
 from app.common.services.news_manager import NewsManager
 

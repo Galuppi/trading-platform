@@ -1,3 +1,5 @@
+"""Builds the DashboardManager instance."""
+
 import logging
 from app.common.services.dashboard_manager import DashboardManager
 from app.common.config.paths import DASHBOARD_PATH

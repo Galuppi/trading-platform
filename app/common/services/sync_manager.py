@@ -1,17 +1,20 @@
+"""Synchronizes local trade state with the broker's reported open/closed positions."""
+
 from typing import List, Any
 
 from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import TRADE_STATUS_OPEN, TRADE_STATUS_CLOSED, DATETIME_FORMAT
 from app.common.models.model_trade import TradeRecord
 from app.common.services.state_manager import StateManager
-from app.common.services.notify_manager import NotifyManager
+from app.common.services.pushover_manager import PushoverManager
 
 
 class SyncManager:
+    """Synchronizes local trade state with the broker's reported open/closed positions."""
     def __init__(
         self,
         state_manager: StateManager,
-        notify_manager: NotifyManager,
+        notify_manager: PushoverManager,
     ) -> None:
         self.state_manager = state_manager
         self.notify_manager = notify_manager

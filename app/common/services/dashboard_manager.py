@@ -1,3 +1,5 @@
+"""Renders and writes the live HTML/terminal status dashboard for the running strategies."""
+
 import os
 import webbrowser
 from datetime import datetime
@@ -6,13 +8,13 @@ from colorama import Fore, Style, init
 
 from app.common.config.paths import DASHBOARD_PATH
 from app.common.services.platform_time import PlatformTime
-from app.common.config.constants import MODE_BACKTEST
 
 init(autoreset=True)
 
 
 class DashboardManager:
 
+    """Renders and writes the live HTML/terminal status dashboard."""
     HTML_TEMPLATE = """<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -52,12 +54,8 @@ class DashboardManager:
     <body>
         <div class="container">
             <h1>Trading System Status</h1>
-            <div class="meta">Mode: {mode} • {date} • Local: {local_time} • Platform: {platform_time} • UTC: {utc_time}</div>
+            <div class="meta">Environment: {mode} • {date} • Local: {local_time} • Platform: {platform_time} • UTC: {utc_time}</div>
             {balances_html}
-            <div class="section">
-                <h3>Market Volatility (VIX)</h3>
-                {vix_html}
-            </div>
             <div class="section">
                 <h3>Strategies</h3>
                 {strategies_html}
@@ -91,9 +89,7 @@ class DashboardManager:
         self,
         strategies: List[Any],
         state_manager: Any,
-        mode: str,
-        backtester_config: Optional[Any],
-        summary_writer: Optional[Any],
+        environment: str,
     ) -> str:
         current_time = datetime.now()
         timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -110,6 +106,7 @@ class DashboardManager:
             is_market_open = strategy.is_market_open()
             is_holiday = strategy.is_holiday()
             market_class = "market-open" if is_market_open else "market-closed"
+            vix_line = self._build_strategy_vix_line(strategy)
             strategies_html += f"""
             <div class="strategy">
                 <div><span class="label">Strategy:</span> {strategy_name}</div>
@@ -117,6 +114,7 @@ class DashboardManager:
                 <div><span class="label">Open Trades:</span> {open_trades}</div>
                 <div><span class="label">Market open:</span> <span class="{market_class}">{'Yes' if is_market_open else 'No'}</span></div>
                 <div><span class="label">Holiday:</span> {'Yes' if is_holiday else 'No'}</div>
+                {vix_line}
             </div>"""
         last_event = state_manager.get_last_event()
         if last_event:
@@ -129,62 +127,33 @@ class DashboardManager:
         else:
             last_event_html = "<div class='item'>No event</div>"
 
-        vix_data = state_manager.get_vix()
-        if vix_data and vix_data.get("value") is not None:
-            vix_class = "profit-neg" if vix_data.get("pause_active") else "profit-pos"
-            pause_class = "warning" if vix_data.get("pause_active") else ""
-            vix_html = f"""
-            <div class="item"><span class="label">VIX:</span> <span class="{vix_class}">{vix_data['value']}</span></div>
-            <div class="item"><span class="label">Threshold:</span> {vix_data.get('threshold')}</div>
-            <div class="item"><span class="label">Pause active:</span> <span class="{pause_class}">{'Yes' if vix_data.get('pause_active') else 'No'}</span></div>
-            <div class="item"><span class="label">Updated:</span> {vix_data.get('updated_at')}</div>
-            """
-        else:
-            vix_html = "<div class='item'>No VIX data</div>"
-
-        if mode == MODE_BACKTEST:
-            balances_html = self._build_backtest_balances(backtester_config, summary_writer)
-        else:
-            balances_html = self._build_live_balances(state_manager)
+        balances_html = self._build_live_balances(state_manager)
         return self.HTML_TEMPLATE.format(
-            mode=mode.capitalize(),
+            mode=environment.capitalize(),
             date=current_date,
             local_time=local_time,
             platform_time=platform_time,
             strategies_html=strategies_html,
             balances_html=balances_html,
-            vix_html=vix_html,
             last_event_html=last_event_html,
             timestamp=timestamp,
             utc_time=utc_time,
         )
 
-    def _build_backtest_balances(self, backtester_config, summary_writer):
-        if not backtester_config or not summary_writer:
-            return "<div class='warning'>[WARNING] Backtest config/writer missing</div>"
-        try:
-            initial_deposit = float(backtester_config.backtest_deposit)
-            balance_info = summary_writer.get_balance_info(initial_deposit=initial_deposit)
-            balance_str = f"{balance_info['balance']:.2f}"
-            profit = balance_info["profit"]
-            target_reached = balance_info.get("target_reached", False)
-            target_reached_str = "Yes" if target_reached else "No"
-            profit_class = "profit-neg" if profit < 0 else "profit-pos"
-            profit_html = f"<span class='{profit_class}'>{profit:+.2f}</span>"
-            return f"""
-            <div class="section">
-                <h3>Balances</h3>
-                <div class="item"><span class="label">Balance:</span> {balance_str}</div>
-            </div>
-            <div class="section">
-                <h3>Daily performance</h3>
-                <div class="item"><span class="label">Profit:</span> {profit_html}</div>
-                <div class="item"><span class="label">Target reached:</span> {target_reached_str}</div>
-            </div>"""
-        except Exception as exc:
-            return f"<div class='warning'>[ERROR] Backtest: {exc}</div>"
+    def _build_strategy_vix_line(self, strategy: Any) -> str:
+        """Build the VIX status line for one strategy's dashboard card, if VIX pause is configured."""
+        if not strategy.config.vix_pause_enabled or strategy.config.vix_threshold is None:
+            return ""
+        current_value = strategy.vix_manager.get_value() if strategy.vix_manager else None
+        paused = strategy.is_vix_paused()
+        pause_class = "warning" if paused else ""
+        return (
+            f'<div><span class="label">VIX:</span> <span class="{pause_class}">'
+            f'{current_value} (threshold {strategy.config.vix_threshold}, '
+            f'{"paused" if paused else "active"})</span></div>'
+        )
 
-    def _build_live_balances(self, state_manager):
+    def _build_live_balances(self, state_manager: Any) -> str:
         try:
             balance_state = state_manager.get_account_snapshot()
             equity_str = f"{balance_state.equity:.2f}"
@@ -219,47 +188,45 @@ class DashboardManager:
         except Exception as exc:
             print(f"{Fore.YELLOW}[WARN] Dashboard write failed: {exc}")
 
-    def _print_terminal_log(self, strategies: List[Any], state_manager: Any, mode: str) -> None:
+    def _print_terminal_log(self, strategies: List[Any], state_manager: Any, environment: str) -> None:
         self._clear_terminal()
         print("\n" + "=" * 60)
-        print(f" STATUS | {mode.upper()} | {PlatformTime.now().strftime('%Y-%m-%d %H:%M')}")
+        print(f" ENVIRONMENT | {environment.upper()} | {PlatformTime.now().strftime('%Y-%m-%d %H:%M')}")
         print("=" * 60)
         for strategy in strategies:
             strategy_name = strategy.strategy_display_name
             asset_list = ", ".join(asset.symbol for asset in strategy.assets)
             trades = len(state_manager.get_open_trades(strategy=strategy.strategy_name) or [])
             market_status = "OPEN" if strategy.is_market_open() else "CLOSED"
-            print(f" • {strategy_name} | Trades: {trades} | {market_status} | {asset_list}")
+            vix_status = " | VIX PAUSED" if strategy.is_vix_paused() else ""
+            print(f" • {strategy_name} | Trades: {trades} | {market_status}{vix_status} | {asset_list}")
         print("-" * 60)
 
-        if mode != MODE_BACKTEST:
-            try:
-                balance_state = state_manager.get_account_snapshot()
-                color = Fore.RED if balance_state.profit_floating < 0 else Fore.GREEN
-                print(
-                    f" Equity: {balance_state.equity:.2f} | "
-                    f"Balance: {balance_state.balance:.2f} | "
-                    f"Profit: {color}{balance_state.profit_floating:+.2f}{Style.RESET_ALL}"
-                )
-            except Exception:
-                print(" [balance unavailable]")
+        try:
+            balance_state = state_manager.get_account_snapshot()
+            color = Fore.RED if balance_state.profit_floating < 0 else Fore.GREEN
+            print(
+                f" Equity: {balance_state.equity:.2f} | "
+                f"Balance: {balance_state.balance:.2f} | "
+                f"Profit: {color}{balance_state.profit_floating:+.2f}{Style.RESET_ALL}"
+            )
+        except Exception:
+            print(" [balance unavailable]")
         print("=" * 60 + "\n")
 
     def print_status_report(
         self,
         strategies: List[Any],
         state_manager: Any,
-        mode: str,
-        backtester_config: Optional[Any] = None,
-        summary_writer: Optional[Any] = None,
+        environment: str,
         *,
         log_to_terminal: bool = False,
     ) -> None:
         try:
-            html_content = self._build_html(strategies, state_manager, mode, backtester_config, summary_writer)
+            html_content = self._build_html(strategies, state_manager, environment)
             self._write_dashboard(html_content)
         except Exception as exc:
             print(f"{Fore.RED}[ERROR] Dashboard failed: {exc}")
 
         if log_to_terminal:
-            self._print_terminal_log(strategies, state_manager, mode)
+            self._print_terminal_log(strategies, state_manager, environment)

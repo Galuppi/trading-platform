@@ -1,3 +1,5 @@
+"""Loads holiday calendars used to determine market closures per strategy."""
+
 import yaml
 
 from pathlib import Path

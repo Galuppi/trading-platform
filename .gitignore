@@ -36,10 +36,6 @@ prod/
 # backlog
 .backlog/
 
-# Ignore large and changing data
-historical-data/
-backtest-results/
-
 #development utils
 dev-tools/
 

@@ -1,3 +1,5 @@
+"""Builds the RiskManager instance."""
+
 import logging
 
 from app.common.services.risk_manager import RiskManager

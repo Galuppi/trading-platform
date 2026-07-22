@@ -1,18 +1,23 @@
+"""Data models representing account balance, margin, and risk snapshots."""
+
 from dataclasses import dataclass
 
 @dataclass
 class BalanceInfo:
+    """Snapshot of account balance and profit at a point in time."""
     equity: float
     balance: float
     free_margin: float
 
 @dataclass
 class MarginInfo:
+    """Snapshot of account margin usage and free margin."""
     required_margin: float
     has_sufficient: bool
 
 @dataclass
 class AccountSnapshot:
+    """Persisted snapshot of equity, balance, and daily risk-target status."""
     timestamp: str
     equity: float
     balance: float
@@ -26,6 +31,7 @@ class AccountSnapshot:
 
 @dataclass
 class AccountRisk:
+    """Configured account-level risk thresholds."""
     account_risk_enabled: bool
     account_stop_loss: float
     account_take_profit: float

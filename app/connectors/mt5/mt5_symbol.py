@@ -1,5 +1,8 @@
+"""MetaTrader 5 implementation of the Symbol interface."""
+
 import MetaTrader5 as mt5
 import logging
+from typing import Any
 
 from app.common.services.platform_time import PlatformTime
 from app.base.base_symbol import Symbol
@@ -27,6 +30,7 @@ TIMEFRAME_MAP = {
 logger = logging.getLogger(__name__)
 
 class Mt5Symbol(Symbol):
+    """MetaTrader 5 implementation of the Symbol interface."""
     def get_ask_price(self, symbol: str) -> float:
         tick = mt5.symbol_info_tick(symbol)
         if tick is None:
@@ -46,7 +50,7 @@ class Mt5Symbol(Symbol):
     def prepare_symbol(self, symbol: str) -> bool:
         return mt5.symbol_select(symbol, True)
 
-    def get_symbol_info(self, symbol: str):
+    def get_symbol_info(self, symbol: str) -> Any:
         return mt5.symbol_info(symbol)
 
     def get_min_volume(self, symbol: str) -> float:

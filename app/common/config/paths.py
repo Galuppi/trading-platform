@@ -1,3 +1,5 @@
+"""Central definitions of filesystem paths used throughout the application."""
+
 from pathlib import Path
 
 #app root directories
@@ -12,13 +14,12 @@ LOG_PATH = APP_DIR / "runtime" / "logs"
 HOLIDAY_PATH = APP_DIR / "common" / "config" / "holidays" / "holidays_{}.yaml"
 ACCOUNT_RISK_PATH = APP_DIR / "common" / "config" / "account_risk.yaml"
 
-#dashboard files
-DASHBOARD_PATH = ROOT_WWW / "status_dashboard.html"
+#lock file
+LOCK_FILE_PATH = APP_DIR / "runtime" / "trader.lck"
 
-#backtest directories and files
-DATA_PATH = ROOT_DIR / "historical-data"
-RESULT_PATH = ROOT_DIR / "backtest-results"
-SUMMARY_PATH = ROOT_DIR / "backtest-results" / "backtest_summary.json"
+#dashboard files
+DASHBOARD_PATH = ROOT_WWW / "ctrader_status_dashboard.html"
 
 #external urls
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.csv"
+VIX_FEED_PATH = r"C:\Apps\SignalProvider\signals\signals.json"

@@ -1,8 +1,10 @@
+"""MetaTrader 5 implementation of the Trade interface."""
+
 import logging
 import MetaTrader5 as mt5
 
 
-from typing import Optional
+from typing import Optional, Any
 from app.base.base_trade import Trade
 from app.common.config.constants import (
     TRADE_DIRECTION_BUY,
@@ -17,6 +19,7 @@ from app.common.services.calculator import Calculator
 logger = logging.getLogger(__name__)
 
 class Mt5Trade(Trade):
+    """MetaTrader 5 implementation of the Trade interface."""
     def __init__(self, calculator: Calculator):
         self.calculator = calculator
         if self.calculator is None:
@@ -102,7 +105,7 @@ class Mt5Trade(Trade):
         price: float = None,
         comment: str = "Python trading system",
         position: str = None,
-        **kwargs
+        **kwargs: Any
     ) -> OrderResult:
         symbol_info_tick = mt5.symbol_info_tick(symbol)
         if not symbol_info_tick:

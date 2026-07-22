@@ -1,3 +1,5 @@
+"""Abstract base class defining the strategy lifecycle: signals, entries, exits, and management."""
+
 from __future__ import annotations
 
 import logging
@@ -13,11 +15,13 @@ from app.base.base_connector import Connector
 
 from app.common.models.model_strategy import StrategyConfig, AssetConfig
 from app.common.models.model_trade import TradeRecord, OrderRequest
+from app.common.models.model_symbol import Range
 from app.common.services.platform_time import PlatformTime
 from app.common.services.state_manager import StateManager
 from app.common.services.news_manager import NewsManager
 from app.common.services.risk_manager import RiskManager
-from app.common.services.notify_manager import NotifyManager
+from app.common.services.vix_manager import VixManager
+from app.common.services.pushover_manager import PushoverManager
 from app.common.config.constants import (
     TRADE_DIRECTION_BUY,
     TRADE_DIRECTION_SELL,
@@ -30,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class Strategy(ABC):
+    """Abstract base class defining the strategy lifecycle: signals, entries, exits, and management."""
     def __init__(self, config: StrategyConfig):
         """Initialize the strategy with configuration."""
         self.config: StrategyConfig = config
@@ -43,7 +48,8 @@ class Strategy(ABC):
         self.state_manager: Optional[StateManager] = None
         self.news_manager: Optional[NewsManager] = None
         self.risk_manager: Optional[RiskManager] = None
-        self.notify_manager: Optional[NotifyManager] = None
+        self.vix_manager: Optional[VixManager] = None
+        self.notify_manager: Optional[PushoverManager] = None
 
     def attach_services(
         self,
@@ -56,7 +62,8 @@ class Strategy(ABC):
         state_manager: StateManager,
         news_manager: NewsManager,
         risk_manager: RiskManager,
-        notify_manager: NotifyManager,
+        vix_manager: VixManager,
+        notify_manager: PushoverManager,
     ) -> None:
         """Attach external services required for strategy execution."""
         self.connector = connector
@@ -67,6 +74,7 @@ class Strategy(ABC):
         self.state_manager = state_manager
         self.news_manager = news_manager
         self.risk_manager = risk_manager
+        self.vix_manager = vix_manager
         self.notify_manager = notify_manager
 
     def set_holidays(self, holidays: list[str]) -> None:
@@ -89,6 +97,27 @@ class Strategy(ABC):
         current_day = PlatformTime.now().strftime("%A")
         return PlatformTime.is_within_market_hours(current_day, sessions)
 
+    def is_vix_paused(self) -> bool:
+        """Check if trading is currently paused due to elevated VIX, per this strategy's config."""
+        if not self.config.vix_pause_enabled or self.config.vix_threshold is None:
+            return False
+        if self.vix_manager is None:
+            return False
+        return self.vix_manager.is_paused(self.config.vix_threshold)
+
+    def get_cached_range(self, symbol: str) -> Optional[Range]:
+        """Optional hook: return a strategy's already-known Range for `symbol`, if set.
+
+        Lets prepare_order() reuse a range the strategy already fetched (e.g.
+        during its periodic set_range() refresh, which is what actually
+        detected the entry signal) instead of triggering a second, redundant
+        network round-trip at order-build time. Strategies that track their
+        own range (currently only BreakOutStrategy) should override this;
+        the default here means "no cached range available", which preserves
+        the existing fetch-on-demand behavior for everything else.
+        """
+        return None
+
     def prepare_order(self, asset: AssetConfig, direction: str) -> OrderRequest:
         """Build an order request with calculated lot size based on strategy rules."""
         return build_order_request(
@@ -98,6 +127,7 @@ class Strategy(ABC):
             calculator=self.calculator,
             strategy_name=self.strategy_name,
             strategy_display_name=self.strategy_display_name,
+            cached_range=self.get_cached_range(asset.symbol),
         )
 
     def is_entry_allowed(self, asset: AssetConfig, order: OrderRequest) -> bool:
@@ -198,7 +228,7 @@ class Strategy(ABC):
         if changed:
             self.state_manager.add_trade(trade)
 
-    def finalize(self):
+    def finalize(self) -> None:
         """Hook for cleanup or final adjustments before shutdown."""
         pass
     

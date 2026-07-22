@@ -1,3 +1,5 @@
+"""SMA crossover strategy driven by news sentiment scoring."""
+
 import json
 import logging
 import numpy
@@ -15,19 +17,16 @@ from app.common.config.constants import TRADE_DIRECTION_SELL, TRADE_DIRECTION_BU
 logger = logging.getLogger(__name__)
 
 ACT_ON_NEWS_RELEASES = False
-CLOSE_TRADES_ON_VIX_PAUSE = False
-VIX_PAUSE_THRESHOLD = 18.0
 TRADE_CATEGORY = "news" 
 
 
 class NewsCrossStrategy(Strategy):
+    """SMA crossover strategy driven by news sentiment scoring."""
     def __init__(self, config: StrategyConfig) -> None:
         super().__init__(config=config)
         self.signals: Dict[str, Signal] = {}
-        self.vix: Optional[float] = None
         self.last_load: Optional[float] = None
         self.resume_trading: bool = False
-        self._vix_pause_logged: bool = False
 
     def initialize(self) -> None:
         for asset in self.assets:
@@ -38,30 +37,17 @@ class NewsCrossStrategy(Strategy):
     def _get_signal(self, signal_symbol: str) -> Optional[Signal]:
         return self.signals.get(signal_symbol)
 
-    def _is_vix_paused(self) -> bool:
-            if self.vix is None:
-                return False
-            if self.vix > VIX_PAUSE_THRESHOLD:
-                if not self._vix_pause_logged:
-                    logger.warning(f"VIX pause active ({self.vix}) > {VIX_PAUSE_THRESHOLD}")
-                    self._vix_pause_logged = True
-                return True
-            if self._vix_pause_logged:
-                logger.info(f"VIX pause cleared ({self.vix}) <= {VIX_PAUSE_THRESHOLD}")
-                self._vix_pause_logged = False
-            return False
-
     def _is_buy_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
         if not signal or signal.sma24 is None or signal.sma4 is None:
             return False
-        if self._is_vix_paused():
+        if self.is_vix_paused():
             return False
         return signal.sma4 > signal.sma24
 
     def _is_sell_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
         if not signal or signal.sma24 is None or signal.sma4 is None:
             return False
-        if self._is_vix_paused():
+        if self.is_vix_paused():
             return False
         return signal.sma4 < signal.sma24
 
@@ -106,7 +92,7 @@ class NewsCrossStrategy(Strategy):
         self._load_signals()
         signal = self._get_signal(asset.signal_symbol)
 
-        if self._is_vix_paused():
+        if self.is_vix_paused():
             return None
 
         first_open_trade = self.state_manager.get_first_open_trade(asset.symbol, strategy=self.strategy_name)
@@ -147,10 +133,6 @@ class NewsCrossStrategy(Strategy):
         signal_symbol = asset_config.signal_symbol
         signal = self._get_signal(signal_symbol)
 
-        if CLOSE_TRADES_ON_VIX_PAUSE and self._is_vix_paused():
-            logger.warning(f"Closing {trade.symbol} — VIX pause active")
-            return True
-
         first_open_trade = self.state_manager.get_first_open_trade(trade.symbol, strategy=self.strategy_name)
         first_open_trade_direction = first_open_trade.type if first_open_trade else None
         if self._is_buy_signal(signal, trade):
@@ -166,7 +148,6 @@ class NewsCrossStrategy(Strategy):
             signal_feed_path = Path(self.config.signal_feed)
             if not signal_feed_path.exists():
                 self.signals = {}
-                self.vix = None
                 return
 
             file_modified_time = signal_feed_path.stat().st_mtime
@@ -177,7 +158,6 @@ class NewsCrossStrategy(Strategy):
                 raw_data = f.read()
                 if not raw_data.strip():
                     self.signals = {}
-                    self.vix = None
                     return
                 signal_payload = json.loads(raw_data)
 
@@ -185,7 +165,6 @@ class NewsCrossStrategy(Strategy):
             if not file_timestamp_str:
                 logger.warning("Signal file missing 'timestamp' field")
                 self.signals = {}
-                self.vix = None
                 return
 
             try:
@@ -196,18 +175,12 @@ class NewsCrossStrategy(Strategy):
                 if age > PlatformTime.timedelta(hours=1):
                     logger.info(f"Signal file too old: {file_timestamp_str} ({age}), skipping load")
                     self.signals = {}
-                    self.vix = None
                     self.last_load = None
                     return
             except Exception as e:
                 logger.warning(f"Failed to parse timestamp '{file_timestamp_str}': {e}, skipping file")
                 self.signals = {}
-                self.vix = None
                 return
-
-            self.vix = signal_payload.get("vix")
-            if self.state_manager is not None:
-                self.state_manager.save_vix(self.vix, VIX_PAUSE_THRESHOLD)
 
             parsed_signals = []
             for signal_entry in signal_payload.get(TRADE_CATEGORY, []):
@@ -230,12 +203,10 @@ class NewsCrossStrategy(Strategy):
             self.signals = {signal.symbol: signal for signal in parsed_signals if signal.symbol}
             self.last_load = file_modified_time
             logger.info(
-                f"Loaded {len(self.signals)} fresh '{TRADE_CATEGORY}' signals "
-                f"(vix={self.vix}) from {file_timestamp_str}"
+                f"Loaded {len(self.signals)} fresh '{TRADE_CATEGORY}' signals from {file_timestamp_str}"
             )
 
         except Exception as error:
             logger.error(f"Failed to load signal file: {error}")
             self.signals = {}
-            self.vix = None
             self.last_load = None

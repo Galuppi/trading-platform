@@ -1,8 +1,22 @@
 PyYAML>=6.0
 MetaTrader5==5.0.5120
-pandas>=2.0
-requests>=2.25
-websocket-client>=1.5
 python-dotenv>=1.0
-pytz>=2023.3
+colorama>=0.4.6
+numpy>=1.24
 pytest>=7.0
+tzdata>=2024.1
+pytz>=2023.3
+
+# cTrader connector
+# NOTE: ctrader-open-api pins Twisted==24.3.0 exactly, which itself caps
+# twisted-iocpsupport at <2 (no Python 3.13 wheel exists in that range).
+# Use a Python 3.12 venv on Windows for this connector.
+ctrader-open-api==0.9.2
+Twisted>=23.10
+pyOpenSSL>=24.0
+service_identity>=24.1
+requests>=2.25
+
+
+#pandas>=2.0
+#websocket-client>=1.5

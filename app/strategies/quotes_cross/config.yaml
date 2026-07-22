@@ -1,9 +1,11 @@
 name: Quotes Cross
 display_name: Quotes Cross 1.0
-enabled: false
-total_strategy_capital: 100000
+enabled: true
+total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
+vix_pause_enabled: true
+vix_threshold: 20
 signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
 
 market_hours:
@@ -31,7 +33,7 @@ market_hours:
       close_time: "23:45"
 
 assets:
-  - symbol: US30.cash
+  - symbol: US30
     open_min: 65
     open_day: 1
     close_min: 1400
@@ -44,7 +46,7 @@ assets:
     max_sell_trades: 5
     percent_of_capital: 80
 
-  - symbol: US100.cash
+  - symbol: USTEC
     open_min: 65
     open_day: 1
     close_min: 1400
@@ -57,14 +59,14 @@ assets:
     max_sell_trades: 5
     percent_of_capital: 140
 
-  - symbol: US500.cash
+  - symbol: US500
     open_min: 65
     open_day: 1
     close_day: 5
     close_min: 1400
     risk_percent: 0.5
     reward_risk_ratio: 2  
-    signal_symbol: US500.cash
+    signal_symbol: US500
     max_total_trades: 10
     max_buy_trades: 5
     max_sell_trades: 5
@@ -84,8 +86,8 @@ assets:
     percent_of_capital: 10
 
   - symbol: XAUUSD
-    open_min: 65
-    open_day: 7
+    open_min: 365
+    open_day: 1
     close_day: 5
     close_min: 1400
     risk_percent: 1.5

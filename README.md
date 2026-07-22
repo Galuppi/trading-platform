@@ -1,157 +1,137 @@
-# 🧠 Trading System Architecture
+# trader
 
-A modular, **multi-strategy**, **multi-asset**, and **multi-platform** trading framework designed for both **live trading** and **backtesting**.  
-Currently supports **MetaTrader 5 (MT5)** with an upcoming **cTrader connector**.  
-Includes a fully functional **backtester** and a **historical data loader** that retrieves M1 data directly from the broker server.
-
----
-
-## ⚙️ Overview
-
-| Component | Description |
-|------------|--------------|
-| **main.py** | Orchestrator that wires up all components — strategies, engine, and state management. Determines mode (live or backtest) based on `.env`. |
-| **Engine** (`engine.py` / `enginetester.py`) | Core runtime loop that executes strategies, manages position states, and persists trades. |
-| **Strategy classes** | Contain all trading logic. Each strategy calls `execute_entry()` and `execute_exit()` to interact with the system. |
-| **Trade classes** (e.g. `Mt5TesterTrade`) | Represent trades. Handle execution or simulation, but remain **stateless** — profit/commission logic lives in `Calculator`. |
-| **Calculator** | Centralized component for all trade math: profit, commissions, margin, and swap calculations. Pure and testable. |
-| **StateManager** | Handles trade persistence and state saving. Interfaces include `add_trade()`, `mark_trade_closed()`, and `get_all_trades()`. |
-| **PlatformTime** | Unified time abstraction used for consistent timestamp handling across live and backtesting. |
+A live, multi-strategy, multi-asset, multi-platform trading application. Currently trades on
+**MetaTrader 5**; a **cTrader** connector is scaffolded and ready for implementation.
 
 ---
 
-## 🧩 System Flow
+## How it runs
 
 ```
-main.py (Orchestrator)
-   ↓
-Engine / EngineTester
-   ↓
-Strategy (multi-strategy)
-   ↓
-Trade / Mt5TesterTrade (execution abstraction)
-   ↓
-Calculator (math only)
-   ↓
-StateManager (persistence)
+main.py                    → loads config, wires up services, starts the engine
+  └─ Engine.run()           → connects, syncs state with broker, loops strategies every 30s
+       └─ Strategy          → per-symbol entry/exit signals, one class per strategy
+            └─ Trade         → stateless order execution (Mt5Trade / CTraderTrade)
+                 └─ Calculator → pure math: sizing, stop loss, profit — no side effects
+       └─ StateManager       → persists trades, account snapshots, daily risk state
+       └─ DashboardManager   → writes the live HTML dashboard + terminal status line
 ```
 
-### ✅ Core Design Principles
-
-- **Multi-Strategy** — multiple strategies can run simultaneously.  
-- **Multi-Asset** — each strategy can handle several symbols concurrently.  
-- **Multi-Platform** — supports MT5 now, cTrader next.  
-- **Stateless Trades** — `Trade` objects hold no persistent state.  
-- **Pure Computation** — all math is in `Calculator`, fully testable.  
-- **Unified Time Handling** — `PlatformTime` ensures consistent timestamps.  
+Strategies never talk to the broker directly — they go through `Trade`, which is a thin,
+stateless execution layer. All the math (position sizing, stop-loss points, profit) is
+centralized in `Calculator`, which takes no side effects and is fully testable in isolation.
 
 ---
 
-## 🧮 Backtesting vs. Live Trading
+## Strategies
 
-The system switches automatically based on `.env` configuration:
+Each strategy is a self-contained folder under `app/strategies/` with its own `strategy.py`
+and `config.yaml`. New strategies are picked up automatically at startup — no registration
+step required, `factory_strategy.py` discovers and loads any folder with both files present.
 
-| Mode | `.env` setting | Engine used | Description |
-|------|----------------|-------------|--------------|
-| **Backtest** | `PLATFORM_TYPE=mt5tester` | `EngineTester` | Runs simulated trades using M1 historical data pulled from the broker. |
-| **Live** | `PLATFORM_TYPE=mt5` | `Engine` | Executes real trades through the MT5 connector. |
+| Strategy | What it does |
+|---|---|
+| `break_out` | Enters when price breaks out of a defined opening range. |
+| `go_long` | Long-only, one directional trade per session. |
+| `go_long_ext` | Long-only with a defined opening range and entry window. |
+| `monday_open_swing` | Enters at Monday's open, exits Tuesday close. |
+| `news_cross` | SMA crossover, signal driven by news sentiment scoring. |
+| `quotes_cross` | SMA crossover, signal driven by live quote/price data. |
 
-### Backtester Highlights
-
-- Fetches **M1 timeframe** data directly from the broker server.  
-- Simulates fills, commissions, and slippage through `Calculator`.  
-- Uses **the same strategy code** as live trading for identical logic.  
-- Persists trade results via `StateManager.add_trade()`.  
-
----
-
-## 🧱 Key Components
-
-### **StateManager**
-- Responsible for persisting trades and state snapshots.  
-- Uses `@dataclass` and `asdict()` for reliable serialization.  
-- Automatically saves state on every trade update.  
-
-### **Mt5TesterTrade**
-- Stateless trade simulator for backtesting.  
-- Delegates profit and commission computation to `Calculator`.  
-- Never persists or mutates external state directly.  
-
-### **Calculator**
-- Centralized math engine for:  
-  - Profit/loss  
-  - Commission and swap  
-  - Margin requirements  
-  - Slippage adjustments  
-
-### **PlatformTime**
-- Provides consistent timestamps and timezone handling.  
-- Used across all modules for unified time logic.  
+`news_cross` and `quotes_cross` both subclass a shared crossover base and are the two
+strategies that can run on the same symbol simultaneously — trade lookups in `StateManager`
+are scoped by strategy name specifically to keep them from stepping on each other's state.
 
 ---
 
-## 🔌 Platform Support
+## Platform support
 
-| Platform | Status | Notes |
-|-----------|--------|-------|
-| **MetaTrader 5** | ✅ Fully implemented | Live + Backtest |
-| **cTrader** | 🚧 Coming soon | Connector in development |
-| **MetaTrader 4** | 🧩 Possible | Compatible with core design |
+| Platform | Status |
+|---|---|
+| MetaTrader 5 | Implemented — live trading via the `MetaTrader5` package, requires the MT5 terminal running and logged in |
+| cTrader | Scaffolded (`app/connectors/ctrader/`) — classes and method signatures are in place, bodies are `NotImplementedError`/`TODO` |
 
----
-
-## 💾 Data Handling
-
-- Historical data loader fetches **M1 timeframe** data from the broker’s server.  
-- Data is cached locally for efficient re-use.  
-- Backtester uses the same strategy logic as live trading.  
-- All trades and results are persisted via `StateManager`.
+Adding a platform means implementing `Account`, `Connector`, `Symbol`, and `Trade` (see
+`app/base/`) and registering it in `app/factories/factory_platform.py`. Nothing else in the
+app needs to change — strategies, the engine, and state persistence are all platform-agnostic.
 
 ---
 
-## 🧰 Technical Notes
+## Configuration
 
-- **Dataclasses** are used for all model objects (`TradeRecord`, `StateBalances`, etc.).  
-- **Dependency Injection** supports modular connector swapping (MT5, cTrader, etc.).  
-- **Logging** uses Python's standard `logging` library.  
-- **Environment Variables** configure runtime behavior:
-  ```bash
-  PLATFORM_TYPE=mt5tester
-  BACKTEST_DEPOSIT=100000
-  BACKTEST_LEVERAGE=1:500
-  ```
+All runtime config comes from `.env` (copy `.env.sample` to get started). Variables are
+grouped by what they actually configure, not lumped under one generic prefix:
 
----
+- **`PLATFORM_*`** — settings that apply regardless of broker: `PLATFORM_TYPE` (`mt5` or
+  `ctrader`), `PLATFORM_ENVIRONMENT` (`Development`/`Production`), `PLATFORM_SERVER`,
+  `PLATFORM_TIMEZONE`, `PLATFORM_TIME_OFFSET`
+- **`MT5_*`** — MetaTrader-specific credentials: `MT5_LOGIN`, `MT5_PASSWORD`, `MT5_TERMINAL_PATH`
+- **`CTRADER_*`** — cTrader-specific credentials: `CTRADER_ACCOUNT_ID`, `CTRADER_CLIENT_ID`,
+  `CTRADER_CLIENT_SECRET`, `CTRADER_REFRESH_TOKEN`, `CTRADER_API_KEY`
+- **`NOTIFY_*`** — Pushover notification settings: `NOTIFY_SERVER_URL`, `NOTIFY_APP_TOKEN`,
+  `NOTIFY_USER_KEY`
+- **`LOG_LEVEL`** — `DEBUG` / `INFO` / `WARNING` / `ERROR` / `CRITICAL`
 
-## 🧭 Key Guarantees
+`PLATFORM_ENVIRONMENT` also gates the single-instance lock file: the app only refuses to start
+a second instance when `PLATFORM_ENVIRONMENT=Production`, so dev runs from VS Code won't get
+blocked by a stale lock. The lock file is released on shutdown regardless of how the process
+ends (clean exit, crash, or Ctrl+C).
 
-✅ All state persistence happens in `Engine`  
-✅ `Mt5TesterTrade` is **stateless** and calls `Calculator` only  
-✅ Trade data is stored via `StateManager.add_trade()`  
-✅ Trade records use `@dataclass` + `asdict()` for clean serialization  
-✅ Multi-strategy, multi-asset, multi-platform architecture by design  
-
----
-
-## 🚀 Roadmap
-
-- [x] MT5 Live Connector  
-- [x] MT5 Backtester  
-- [x] Historical Data Loader  
-- [ ] cTrader Connector  
-- [ ] Advanced Risk Manager  
-- [ ] Web Dashboard for Monitoring  
+Notifications are Pushover-only — there's no multi-service abstraction here, since that's the
+only service actually in use.
 
 ---
 
-## 🧩 Summary
+## Running it
 
-This trading system provides a **clean separation of concerns**:
+**Development** — open the folder in VS Code, select the venv interpreter, run
+`app/runtime/main.py` directly (F5 or via a `launch.json` debug config).
 
-- **Strategy logic** → Strategy classes  
-- **Execution logic** → Trade / Connector layer  
-- **Computation** → Calculator  
-- **Persistence** → StateManager  
-- **Orchestration** → main.py  
+**Production** — `startup/run_app_prod.bat` activates the production venv and runs the app.
+`startup/backup_and_deploy_to_production.bat` handles backing up and deploying a new build to
+the production folder. `startup/release_app_prod.bat` is the release entry point.
 
-This architecture ensures a highly **extensible**, **testable**, and **broker-agnostic** trading system — suitable for both live trading and historical backtesting.
+```bash
+python -m venv venv
+# Windows:
+.\venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.sample .env   # then fill in real credentials
+python app\runtime\main.py
+```
+
+MT5 requires the MetaTrader 5 terminal to be installed and running locally, logged into the
+account matching `MT5_LOGIN` — the Python package talks to the running terminal, it doesn't
+connect independently.
+
+---
+
+## Project layout
+
+```
+app/
+  base/         abstract interfaces: Account, Connector, Symbol, Trade, Strategy, BaseEngine
+  common/
+    config/     constants, paths, env loaders
+    models/     dataclasses: ConnectorConfig, TradeRecord, StrategyConfig, etc.
+    services/   Calculator, StateManager, DashboardManager, NewsManager, RiskManager,
+                SyncManager, PlatformTime, PushoverManager
+  connectors/
+    mt5/        MetaTrader 5 implementation (live)
+    ctrader/    cTrader implementation (scaffold)
+  factories/    wiring — builds concrete instances from config, no business logic
+  runtime/      main.py (entry point) and engine.py (the run loop)
+  strategies/   one folder per strategy, each with strategy.py + config.yaml
+startup/        .bat scripts for dev/prod runs and deployment
+tests/          pytest scaffold
+```
+
+---
+
+## Status
+
+- ✅ MT5 live connector, fully wired
+- ✅ Six strategies running against MT5
+- ✅ Type hints and docstrings complete across the codebase
+- 🚧 cTrader connector — scaffolded, `connect()`/`connection_check()` not yet implemented
+- 🔜 Advanced risk manager, web-based monitoring dashboard

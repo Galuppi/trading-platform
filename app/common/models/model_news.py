@@ -1,3 +1,5 @@
+"""Data model representing an economic calendar event."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +9,7 @@ ImpactLevel = Literal["Low", "Medium", "High", "Holiday"]
 
 @dataclass(frozen=True, slots=True)
 class FaireconomyEvent:
+    """A single economic calendar event."""
     date: str
     timestamp: Optional[int]
     time: str

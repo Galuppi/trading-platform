@@ -1,3 +1,5 @@
+"""Shared constant values used across the trading application."""
+
 # Date/time formats
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DATE_FORMAT = "%Y-%m-%d"
@@ -17,10 +19,9 @@ TRADE_CLOSURE_SL = "stop_loss"
 TRADE_CLOSURE_TP = "take_profit"
 TRADE_CLOSURE_SIGNAL = "signal"
 
-# run mode
-MODE_LIVE = "live"
-MODE_BACKTEST = "backtest"
-MODE_HISTORY = "history"
+# platform environment
+ENVIRONMENT_DEVELOPMENT = "development"
+ENVIRONMENT_PRODUCTION = "production"
 
 # Timeframes
 TIMEFRAME_M1 = "M1"

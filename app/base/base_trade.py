@@ -1,3 +1,5 @@
+"""Abstract interface for placing, modifying, and closing trades."""
+
 from abc import ABC, abstractmethod
 from app.common.models.model_trade import TradeResult, OrderResult, TradeRecord, OrderRequest
 from app.common.services.platform_time import PlatformTime
@@ -6,6 +8,7 @@ from typing import Optional
 
 
 class Trade(ABC):
+    """Abstract interface for placing, modifying, and closing trades."""
     @abstractmethod
     def open_position(self, order: OrderRequest) -> OrderResult:
         """Place a new order (market or pending), including SL/TP/comment if present."""

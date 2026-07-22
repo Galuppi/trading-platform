@@ -1,14 +1,18 @@
+"""Data models representing trade inputs, results, records, and orders."""
+
 from dataclasses import dataclass
 from typing import Optional
 
 @dataclass
 class TradeInput:
+    """Input parameters for evaluating a potential trade."""
     symbol: str
     capital: float
     risk_percent: float = 1.0
 
 @dataclass
 class TradeResult:
+    """Outcome of an evaluated trade."""
     symbol: str
     lot_size: float
     accepted: bool
@@ -24,6 +28,7 @@ class TradeResult:
 
 @dataclass
 class TradeRecord:
+    """Persisted record of an opened or closed trade."""
     id: str
     symbol: str
     lot_size: float
@@ -46,6 +51,7 @@ class TradeRecord:
 
 @dataclass
 class OrderResult:
+    """Result of submitting an order to the broker."""
     symbol: str
     lot_size: float
     accepted: bool
@@ -60,6 +66,7 @@ class OrderResult:
 
 @dataclass
 class OrderRequest:
+    """A fully sized order ready to be submitted to the broker."""
     symbol: str
     direction: str
     lot_size: float
@@ -75,6 +82,7 @@ class OrderRequest:
 
 @dataclass
 class ProfitResult:
+    """Computed profit/loss for a closed trade."""
     profit: float = 0.0
     commission: float = 0.0
     slippage_entry: float = 0.0

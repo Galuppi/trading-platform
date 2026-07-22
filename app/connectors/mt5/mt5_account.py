@@ -1,7 +1,9 @@
+"""MetaTrader 5 implementation of the Account interface."""
+
 import MetaTrader5 as mt5
 import logging
 
-from typing import List, Optional
+from typing import List, Optional, Any
 from app.base.base_account import Account
 from app.common.models.model_trade import OrderRequest, TradeRecord
 from app.common.config.constants import (
@@ -18,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class Mt5Account(Account):
+    """MetaTrader 5 implementation of the Account interface."""
     def get_balance(self) -> float:
         account_info = self._safe_account_info()
         if account_info is None:
@@ -162,7 +165,7 @@ class Mt5Account(Account):
 
         return offset_int
     
-    def _safe_account_info(self):
+    def _safe_account_info(self) -> Optional[Any]:
         for attempt in range(1, RETRY_COUNT + 1):
             info = mt5.account_info()
             if info is not None:

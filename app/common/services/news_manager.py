@@ -1,3 +1,5 @@
+"""Tracks and exposes upcoming/releasing economic calendar events."""
+
 from __future__ import annotations
 
 import csv
@@ -28,6 +30,7 @@ IMPACT_MAPPING: Dict[str, ImpactLevel] = {
 
 
 class NewsManager:
+    """Tracks and exposes upcoming/releasing economic calendar events."""
     def __init__(self, window_minutes: int = 10) -> None:
         self.events: List[FaireconomyEvent] = []
         self.window_seconds = window_minutes * 60

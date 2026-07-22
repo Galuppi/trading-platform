@@ -1,3 +1,5 @@
+"""Shared strategy execution loop and risk/profit-target handling for all platform engines."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -7,17 +9,16 @@ from typing import List, Optional
 from app.base.base_account import Account
 from app.base.base_connector import Connector
 from app.base.base_strategy import Strategy
-from app.common.config.constants import MODE_LIVE, TRADE_STATUS_OPEN
+from app.common.config.constants import TRADE_STATUS_OPEN
 from app.common.config.paths import LOG_PATH
 from app.common.models.model_connector import ConnectorConfig
-from app.common.models.model_backtest import BacktestConfig
 from app.common.services.platform_time import PlatformTime
 from app.common.services.logger import setup_logger
 from app.common.services.dashboard_manager import DashboardManager
 from app.common.services.news_manager import NewsManager
+from app.common.services.vix_manager import VixManager
 from app.common.services.risk_manager import RiskManager
-from app.common.services.backtest_summary import BacktestSummary
-from app.common.services.notify_manager import NotifyManager
+from app.common.services.pushover_manager import PushoverManager
 from app.common.services.sync_manager import SyncManager
 from app.common.services.state_manager import StateManager
 
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class BaseEngine(ABC):
 
+    """Shared strategy execution loop and risk/profit-target handling for all engines."""
     def __init__(
         self,
         connector: Connector,
@@ -32,11 +34,10 @@ class BaseEngine(ABC):
         strategies: List[Strategy],
         state_manager: StateManager,
         connector_config: ConnectorConfig,
-        backtester_config: BacktestConfig,
         dashboard_manager: DashboardManager,
         news_manager: NewsManager,
-        summary_writer: BacktestSummary,
-        notify_manager: NotifyManager,
+        vix_manager: VixManager,
+        notify_manager: PushoverManager,
         risk_manager: Optional[RiskManager] = None,
         sync_manager: Optional[SyncManager] = None,
     ) -> None:
@@ -46,13 +47,12 @@ class BaseEngine(ABC):
         self.strategies: List[Strategy] = strategies
         self.state_manager: StateManager = state_manager
         self.connector_config: ConnectorConfig = connector_config
-        self.backtester_config: BacktestConfig = backtester_config
         self.today: int = 0
         self.dashboard_manager: DashboardManager = dashboard_manager
         self.news_manager: NewsManager = news_manager
+        self.vix_manager: VixManager = vix_manager
         self.risk_manager: Optional[RiskManager] = risk_manager
-        self.summary_writer: BacktestSummary = summary_writer
-        self.notify_manager: NotifyManager = notify_manager
+        self.notify_manager: PushoverManager = notify_manager
         self.sync_manager: Optional[SyncManager] = sync_manager
         self.last_logged_event_ts: int = 0
 
@@ -74,25 +74,24 @@ class BaseEngine(ABC):
         if self.today != PlatformTime.now().day:
             self.state_manager.clean_last_event()
             self.state_manager.save_begin_balances()
-            self.risk_manager.initialize()  
-            begin_balance_week = self.state_manager.get_begin_balance_week() 
+            self.risk_manager.initialize()
+            begin_balance_week = self.state_manager.get_begin_balance_week()
             begin_balance = self.state_manager.get_begin_balance()
             weekly_profit_reached = self.state_manager.get_weekly_profit_reached()
             if weekly_profit_reached:
                 self.notify_manager.send_notification(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.", "Weekly Target Hit", 1)
-                logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")   
+                logger.info(f"Weekly profit reached: {weekly_profit_reached}. No more trades for the week.")
             if PlatformTime.now().weekday() == 0 or begin_balance_week == begin_balance:
                 self.state_manager.save_begin_balances_week()
-                begin_balance_week = self.state_manager.get_begin_balance_week() 
+                begin_balance_week = self.state_manager.get_begin_balance_week()
                 self.notify_manager.send_notification(f"New trading week begins with begin balance of {begin_balance_week}", "New Week")
-            setup_logger(LOG_PATH, self.connector_config.mode)
+            setup_logger(LOG_PATH, self.connector_config.environment)
 
-        if self.connector_config.mode == MODE_LIVE:
-            event = self.news_manager.get_releasing_event()
-            if event and event.timestamp != self.last_logged_event_ts:
-                self.state_manager.save_last_event(event)
-                logger.info(f"Current news event: {event}")
-                self.last_logged_event_ts = event.timestamp
+        event = self.news_manager.get_releasing_event()
+        if event and event.timestamp != self.last_logged_event_ts:
+            self.state_manager.save_last_event(event)
+            logger.info(f"Current news event: {event}")
+            self.last_logged_event_ts = event.timestamp
 
         for strategy in self.strategies:
             if strategy.is_holiday() or not strategy.is_market_open():
@@ -123,7 +122,7 @@ class BaseEngine(ABC):
                     for trade in self.state_manager.get_open_trades(
                         symbol=asset.symbol,
                         strategy=strategy.strategy_name
-                    ):                        
+                    ):
                         if strategy.is_exit_signal(trade, asset) and strategy.is_exit_allowed(trade):
                             try:
                                 strategy.execute_exit(trade, stopped=False)
@@ -143,10 +142,9 @@ class BaseEngine(ABC):
                             try:
                                 strategy.manage_entry(trade)
                             except Exception as error:
-                                logger.warning(f"Failed to manage trade {trade.id}: {error}")    
-                                           
-                    if self.connector_config.mode == MODE_LIVE:
-                        self.state_manager.clean_old_closed_trades()
+                                logger.warning(f"Failed to manage trade {trade.id}: {error}")
+
+                    self.state_manager.clean_old_closed_trades()
                 except Exception as e:
                     logger.warning(f"Error checking exits for {asset.symbol}: {e}")
 
@@ -165,14 +163,6 @@ class BaseEngine(ABC):
             account_risk_enabled = risk_manager.get_account_risk_enabled() if risk_manager else False
             begin_balance = self.state_manager.get_begin_balance()
 
-            backtest_deposit = self.backtester_config.backtest_deposit or 100000.0
-            balance_info = self.summary_writer.get_balance_info(backtest_deposit)
-            floating_profit = self.state_manager.get_floating_profit()
-            new_balance = balance_info["balance"]
-            new_equity = new_balance + floating_profit
-
-            self.account.set_balance(new_balance)
-            self.account.set_equity(new_equity)
             equity = self.account.get_equity()
             balance = self.account.get_balance()
 
@@ -184,10 +174,10 @@ class BaseEngine(ABC):
             target_reached = self.state_manager.get_target_reached()
 
             take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled and begin_balance > 0 else False
-            stop_loss_reached = equity - begin_balance  <= account_stop_loss if account_risk_enabled and begin_balance > 0 else False  
+            stop_loss_reached = equity - begin_balance <= account_stop_loss if account_risk_enabled and begin_balance > 0 else False
 
             if not break_even_reached and begin_balance > 0:
-                break_even_reached = equity - begin_balance >= account_break_even if account_risk_enabled else False  
+                break_even_reached = equity - begin_balance >= account_break_even if account_risk_enabled else False
                 if break_even_reached:
                     self.risk_manager.update_account_stop_loss(account_profit_level)
                     self.notify_manager.send_notification("Break-even level reached. Adjusting account stop loss.", "Break-Even Hit")
@@ -220,7 +210,17 @@ class BaseEngine(ABC):
                 logger.warning(f"Failed to refresh calendar: {error}")
             return timestamp
         return last_news_refresh_update
-        
+
+    def _periodic_vix_refresh(self, timestamp: int, last_vix_refresh_update: int) -> int:
+        """Refresh VIX if 30 seconds have elapsed since last update."""
+        if timestamp - last_vix_refresh_update >= 30:
+            try:
+                self.vix_manager.refresh()
+            except Exception as error:
+                logger.warning(f"Failed to refresh VIX: {error}")
+            return timestamp
+        return last_vix_refresh_update
+
     @abstractmethod
     def run(self) -> None:
         """Entry point for the engine execution loop."""

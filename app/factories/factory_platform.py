@@ -1,3 +1,5 @@
+"""Builds platform-specific connector, trade, symbol, and account instances by platform name."""
+
 import logging
 
 from app.base.base_account import Account
@@ -5,32 +7,27 @@ from app.base.base_symbol import Symbol
 from app.base.base_connector import Connector
 from app.base.base_trade import Trade
 from app.common.services.calculator import Calculator
+from app.common.services.state_manager import StateManager
 from app.common.models.model_connector import ConnectorConfig
-from app.common.services.backtest_summary import BacktestSummary
-from app.common.models.model_backtest import BacktestConfig 
 
 
 logger = logging.getLogger(__name__)
 
-def get_connector(name: str, config: ConnectorConfig) -> Connector:
+def get_connector(name: str, config: ConnectorConfig, state_manager: StateManager = None) -> Connector:
     name = name.lower()
 
     if name == "mt5":
         from app.connectors.mt5.mt5_connector import Mt5Connector
-        return Mt5Connector(config)
+        return Mt5Connector(config, state_manager)
 
     if name == "ctrader":
         from app.connectors.ctrader.ctrader_connector import CTraderConnector
-        return CTraderConnector(config)
-
-    if name == "mt5tester":
-        from app.connectors.mt5tester.mt5tester_connector import Mt5testerConnector
-        return Mt5testerConnector(config)
+        return CTraderConnector(config, state_manager)
 
     raise ValueError(f"Unsupported platform: {name}")
 
 
-def get_trade(name: str, symbol: Symbol=None, calculator: Calculator = None, summary_writer: BacktestSummary = None) -> Trade:
+def get_trade(name: str, symbol: Symbol = None, calculator: Calculator = None) -> Trade:
     name = name.lower()
 
     if name == "mt5":
@@ -39,16 +36,12 @@ def get_trade(name: str, symbol: Symbol=None, calculator: Calculator = None, sum
 
     if name == "ctrader":
         from app.connectors.ctrader.ctrader_trade import CTraderTrade
-        return CTraderTrade()
-
-    if name == "mt5tester":
-        from app.connectors.mt5tester.mt5tester_trade import Mt5testerTrade
-        return Mt5testerTrade(symbol, calculator, summary_writer)
+        return CTraderTrade(calculator)
 
     raise ValueError(f"Unsupported trade system for platform: {name}")
 
 
-def get_symbol(name: str, backtester_config=None, account=None) -> Symbol:
+def get_symbol(name: str) -> Symbol:
     name = name.lower()
 
     if name == "mt5":
@@ -59,14 +52,10 @@ def get_symbol(name: str, backtester_config=None, account=None) -> Symbol:
         from app.connectors.ctrader.ctrader_symbol import CTraderSymbol
         return CTraderSymbol()
 
-    if name == "mt5tester":
-        from app.connectors.mt5tester.mt5tester_symbol import Mt5testerSymbol
-        return Mt5testerSymbol(backtester_config, account)
-
     raise ValueError(f"Unsupported symbol service for platform: {name}")
 
 
-def get_account(name: str, backtester_config:BacktestConfig=None) -> Account:
+def get_account(name: str) -> Account:
     name = name.lower()
 
     if name == "mt5":
@@ -76,9 +65,5 @@ def get_account(name: str, backtester_config:BacktestConfig=None) -> Account:
     if name == "ctrader":
         from app.connectors.ctrader.ctrader_account import CTraderAccount
         return CTraderAccount()
-
-    if name == "mt5tester":
-        from app.connectors.mt5tester.mt5tester_account import Mt5testerAccount
-        return Mt5testerAccount(backtester_config)
 
     raise ValueError(f"Unsupported account service for platform: {name}")
