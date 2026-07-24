@@ -101,15 +101,31 @@ class CTraderSymbol(Symbol):
         return self.session.get_asset_name(light.quoteAssetId)
 
     def get_tick_value(self, symbol: str) -> float:
-        """Approximate value of one tick move for 1.0 lot, in the symbol's profit currency.
+        """Value of one tick move for 1.0 lot, in the account's deposit currency.
 
-        NOTE: assumes the profit currency equals the account currency (no
-        cross-currency conversion). Correct for e.g. XAUUSD/USTEC-style
-        USD-quoted instruments on a USD account; verify for others.
+        cTrader returns tick_size * contract_size in the symbol's own profit
+        currency, unlike MT5's trade_tick_value which the broker already
+        converts to the account currency. JPY-quoted pairs (EURJPY, USDJPY)
+        are the current known case: profit currency JPY on a USD account,
+        off by roughly the USDJPY rate if left unconverted. Converted here
+        via the live USDJPY rate, since that pair is already actively traded
+        and subscribed.
         """
         tick_size = self.get_tick_size(symbol)
         contract_size = self.get_contract_size(symbol)
-        return tick_size * contract_size
+        raw_tick_value = tick_size * contract_size
+
+        if self.get_currency_profit(symbol) == "JPY":
+            try:
+                usdjpy_rate = self.get_bid_price("USDJPY")
+            except Exception as error:
+                logger.warning(f"Could not fetch USDJPY rate to convert tick value for {symbol}: {error}")
+                return 0.0
+            if usdjpy_rate <= 0:
+                return 0.0
+            return raw_tick_value / usdjpy_rate
+
+        return raw_tick_value
 
     def get_high_low_range(
         self,

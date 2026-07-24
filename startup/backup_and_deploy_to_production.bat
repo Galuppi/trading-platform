@@ -35,6 +35,9 @@ REM Generate timestamp YYYY-MM-DD_HHMMSS
 for /f %%A in ('wmic OS Get localdatetime ^| find "."') do set "dt=%%A"
 set "TS=%dt:~0,4%-%dt:~4,2%-%dt:~6,2%_%dt:~8,6%"
 
+REM REM Generate timestamp YYYY-MM-DD_HHMMSS
+REM for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmmss"') do set "TS=%%A"
+
 if exist "%DEST%\app" (
     xcopy "%DEST%\app" "%BACKUP_DIR%\%TS%_prd_app\" /E /I /Y /Q >nul 2>&1
     echo Backup created: %BACKUP_DIR%\%TS%_prd_app\
