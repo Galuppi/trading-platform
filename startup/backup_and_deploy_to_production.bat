@@ -7,7 +7,7 @@ echo --------------------------------------------
 
 REM ==== CONFIGURATION ====
 set "SOURCE=%~dp0.."
-set "DEST=C:\Apps\Trader"
+set "DEST=C:\Apps\CTrader"
 set "BACKUP_DIR=C:\Backups\prd_trader"
 set "PUBLIC_REPO_DIR=C:\Development\trading-platform"
 set "PYTHON_VERSION=3.12"
@@ -34,9 +34,6 @@ if not exist "%BACKUP_DIR%" md "%BACKUP_DIR%" >nul 2>&1
 REM Generate timestamp YYYY-MM-DD_HHMMSS
 for /f %%A in ('wmic OS Get localdatetime ^| find "."') do set "dt=%%A"
 set "TS=%dt:~0,4%-%dt:~4,2%-%dt:~6,2%_%dt:~8,6%"
-
-REM REM Generate timestamp YYYY-MM-DD_HHMMSS
-REM for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmmss"') do set "TS=%%A"
 
 if exist "%DEST%\app" (
     xcopy "%DEST%\app" "%BACKUP_DIR%\%TS%_prd_app\" /E /I /Y /Q >nul 2>&1
