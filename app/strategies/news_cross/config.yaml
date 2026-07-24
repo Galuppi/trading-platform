@@ -1,6 +1,6 @@
 name: News Cross
 display_name: News Cross 1.0
-enabled: true
+enabled: false
 total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
