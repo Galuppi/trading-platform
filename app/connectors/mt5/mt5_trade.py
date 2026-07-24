@@ -39,7 +39,8 @@ class Mt5Trade(Trade):
             direction=order.direction,
             sl=order.stop_loss,
             tp=order.take_profit,
-            comment=order.comment or "Python trading system"
+            comment=order.comment or "Python trading system",
+            magic=order.magic or 0,
         )
 
     def close_position(self, trade: TradeRecord) -> TradeResult:
@@ -59,6 +60,7 @@ class Mt5Trade(Trade):
             direction=opposite_direction,
             comment=trade.comment or "Close position",
             position=trade.ticket,
+            magic=getattr(trade, "magic", 0) or 0,
         )
 
         if result.accepted:
@@ -105,6 +107,7 @@ class Mt5Trade(Trade):
         price: float = None,
         comment: str = "Python trading system",
         position: str = None,
+        magic: int = 0,
         **kwargs: Any
     ) -> OrderResult:
         symbol_info_tick = mt5.symbol_info_tick(symbol)
@@ -122,7 +125,7 @@ class Mt5Trade(Trade):
             "type": order_type_code,
             "price": price,
             "deviation": 10,
-            "magic": 0,
+            "magic": magic,
             "comment": comment,
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,

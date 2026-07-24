@@ -1,11 +1,10 @@
 """Configures the application-wide logger, writing to a dated log file."""
 
-import os
 import logging
 from app.common.services.platform_time import PlatformTime
 from pathlib import Path
 
-def setup_logger(log_path: Path, environment: str) -> logging.Logger:
+def setup_logger(log_path: Path, environment: str, log_level: str = "INFO") -> logging.Logger:
     """Initialize and configure the application logger."""
     root_logger = logging.getLogger()
 
@@ -16,8 +15,7 @@ def setup_logger(log_path: Path, environment: str) -> logging.Logger:
     log_file = log_path / f"{environment.lower()}_{date_str}.log"
     log_path.mkdir(parents=True, exist_ok=True)
 
-    level_str = os.getenv("LOG_LEVEL", "INFO").upper()
-    log_level = getattr(logging, level_str, logging.INFO)
+    log_level = getattr(logging, (log_level or "INFO").upper(), logging.INFO)
 
     logging.basicConfig(
         level=log_level,

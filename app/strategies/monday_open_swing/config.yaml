@@ -4,6 +4,7 @@ enabled: true
 total_strategy_capital: 50000
 positioning: capital
 holiday_calendar: us
+magic: 1004
 
 market_hours:
   sessions:

@@ -10,10 +10,11 @@ from app.factories.factory_calculator import get_calculator
 load_dotenv()
 
 from app.common.config.paths import STATE_PATH, LOG_PATH, LOCK_FILE_PATH
-from app.common.config.constants import ENVIRONMENT_PRODUCTION
 from app.common.services.logger import setup_logger
+from app.common.services.lock import is_already_running, release_lock
 from app.common.config.loaders.loader_connector_config import load_connector_config
 from app.common.config.loaders.loader_notify_config import load_notify_config
+from app.common.config.loaders.loader_log_config import load_log_level
 from app.factories.factory_platform import (
     get_connector,
     get_account,
@@ -34,27 +35,19 @@ from app.factories.factory_sync_manager import get_sync_manager
 logger = logging.getLogger(__name__)
 
 
-def is_already_running(environment: str) -> bool:
-    if LOCK_FILE_PATH.exists() and environment == ENVIRONMENT_PRODUCTION:
-        print("Another instance is already running. Exiting.")
-        return True
-    else:
-        LOCK_FILE_PATH.touch()
-        return False
-
-
 if __name__ == "__main__":
 
     connector_config = load_connector_config()
 
-    if is_already_running(connector_config.environment):
+    if is_already_running(LOCK_FILE_PATH, connector_config.environment):
         sys.exit(1)
 
     notify_config = load_notify_config()
+    log_level = load_log_level()
 
     platform_name = (connector_config.type or "").lower()
 
-    setup_logger(LOG_PATH, connector_config.environment)
+    setup_logger(LOG_PATH, connector_config.environment, log_level)
     logger.info(f"Environment: {connector_config.environment} | Platform: {platform_name} | Server: {connector_config.server}")
     logger.info(f"Using state file: {STATE_PATH}")
 
@@ -115,8 +108,4 @@ if __name__ == "__main__":
         logger.exception(f"Fatal error: {e}")
         input("Press Enter to exit...")
     finally:
-        try:
-            if LOCK_FILE_PATH.exists():
-                LOCK_FILE_PATH.unlink()
-        except Exception:
-            pass
+        release_lock(LOCK_FILE_PATH)

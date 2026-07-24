@@ -55,6 +55,7 @@ class StrategyConfig:
     assets: List[AssetConfig]
     positioning: str = POSITIONING_CAPITAL
     enabled: bool = True
+    magic: int = 0
     signal_feed: Optional[str] = None
     symbol_mapping_file: Optional[str] = None
     vix_pause_enabled: bool = False

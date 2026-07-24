@@ -60,6 +60,7 @@ def strategy_registry_config(config_path: Path) -> StrategyConfig:
         market_hours=market_hours,
         assets=assets,
         enabled=raw_config.get("enabled", True),
+        magic=raw_config.get("magic", 0),
         signal_feed=raw_config.get("signal_feed", ""),
         vix_pause_enabled=raw_config.get("vix_pause_enabled", False),
         vix_threshold=raw_config.get("vix_threshold"),

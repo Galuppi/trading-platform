@@ -542,7 +542,7 @@ class CTraderSession:
     # Order placement / closing (event-correlated, no direct Res)
     # ------------------------------------------------------------------
 
-    def new_market_order(self, symbol: str, api_volume: int, trade_side_enum: int, comment: str = "") -> Any:
+    def new_market_order(self, symbol: str, api_volume: int, trade_side_enum: int, comment: str = "", label: str = "") -> Any:
         from ctrader_open_api.messages.OpenApiMessages_pb2 import ProtoOANewOrderReq
         from ctrader_open_api.messages.OpenApiModelMessages_pb2 import ProtoOAOrderType
 
@@ -561,6 +561,7 @@ class CTraderSession:
                 tradeSide=trade_side_enum,
                 volume=api_volume,
                 comment=comment or "",
+                label=label or "",
                 clientOrderId=client_order_id,
             )
             self._fire_and_forget(request)

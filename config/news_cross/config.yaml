@@ -4,6 +4,7 @@ enabled: false
 total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
+magic: 1005
 signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
 
 market_hours:

@@ -31,6 +31,7 @@ def build_order_request(
         risk_percent=asset.risk_percent or 0,
         comment=strategy_display_name,
         reward_risk_ratio=asset.reward_risk_ratio or 0,
+        magic=config.magic,
     )
 
     stop_loss_points = calculator.calculate_stop_loss_points(

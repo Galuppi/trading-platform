@@ -4,6 +4,7 @@ enabled: true
 total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
+magic: 1006
 vix_pause_enabled: true
 vix_threshold: 20
 signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
