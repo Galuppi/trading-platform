@@ -4,7 +4,7 @@ enabled: false
 total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
-magic: 1005
+strategy_id: 1005
 vix_pause_enabled: true
 vix_threshold: 18
 signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
@@ -34,7 +34,7 @@ market_hours:
       close_time: "23:45"
 
 assets:
-  - symbol: US30
+  - symbol: US30.cash
     open_min: 65
     open_day: 1
     close_min: 1400
@@ -45,9 +45,9 @@ assets:
     max_total_trades: 10
     max_buy_trades: 5
     max_sell_trades: 5
-    percent_of_capital: 80
+    percent_of_capital: 145
 
-  - symbol: USTEC
+  - symbol: US100.cash
     open_min: 65
     open_day: 1
     close_min: 1400
@@ -58,20 +58,20 @@ assets:
     max_total_trades: 10
     max_buy_trades: 5
     max_sell_trades: 5
-    percent_of_capital: 140
+    percent_of_capital: 255
 
-  - symbol: US500
+  - symbol: US500.cash
     open_min: 65
     open_day: 1
     close_day: 5
     close_min: 1400
     risk_percent: 0.5
-    reward_risk_ratio: 2  
+    reward_risk_ratio: 2
     signal_symbol: US500
     max_total_trades: 10
     max_buy_trades: 5
     max_sell_trades: 5
-    percent_of_capital: 80
+    percent_of_capital: 145
 
   - symbol: BTCUSD
     open_min: 65
@@ -84,4 +84,4 @@ assets:
     max_total_trades: 10
     max_buy_trades: 5
     max_sell_trades: 5
-    percent_of_capital: 10
+    percent_of_capital: 18

@@ -78,6 +78,6 @@ class Account(ABC):
         pass
 
     @abstractmethod
-    def get_server_tick_timestanp(self) -> Optional[int]:
+    def get_server_tick_timestamp(self) -> Optional[int]:
         """Return broker tick timestamp."""
         pass

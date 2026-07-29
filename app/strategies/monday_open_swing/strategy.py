@@ -2,6 +2,8 @@
 
 import logging
 
+from typing import Optional
+
 from app.base.base_strategy import Strategy
 from app.common.services.platform_time import PlatformTime
 from app.common.models.model_strategy import StrategyConfig, AssetConfig
@@ -25,7 +27,7 @@ class MondayOpenSwingStrategy(Strategy):
                     f"Symbol '{asset.symbol}' not available or not visible in Market Watch"
                 )
 
-    def is_entry_signal(self, asset: AssetConfig) -> str | None:
+    def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
         if self.state_manager.get_target_reached():
             return None
 

@@ -1,10 +1,10 @@
 name: GoLong
 display_name: Go Long 1.0
-enabled: true
+enabled: false
 total_strategy_capital: 50000
 positioning: capital
 holiday_calendar: us
-magic: 1002
+strategy_id: 1002
 
 market_hours:
   sessions:

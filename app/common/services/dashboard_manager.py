@@ -1,6 +1,7 @@
 """Renders and writes the live HTML/terminal status dashboard for the running strategies."""
 
 import os
+import logging
 import webbrowser
 from datetime import datetime
 from typing import Any, List, Optional
@@ -10,6 +11,8 @@ from app.common.config.paths import DASHBOARD_PATH
 from app.common.services.platform_time import PlatformTime
 
 init(autoreset=True)
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardManager:
@@ -82,8 +85,8 @@ class DashboardManager:
             try:
                 webbrowser.open(f"file://{os.path.abspath(self.dashboard_path)}", new=2)
                 self._browser_opened = True
-            except Exception:
-                pass
+            except Exception as error:
+                logger.warning("Could not open dashboard in browser: %s", error)
 
     def _build_html(
         self,
@@ -144,7 +147,7 @@ class DashboardManager:
         """Build the VIX status line for one strategy's dashboard card, if VIX pause is configured."""
         if not strategy.config.vix_pause_enabled or strategy.config.vix_threshold is None:
             return ""
-        current_value = strategy.vix_manager.get_value() if strategy.vix_manager else None
+        current_value = strategy.vix_manager.value if strategy.vix_manager else None
         paused = strategy.is_vix_paused()
         pause_class = "warning" if paused else ""
         return (

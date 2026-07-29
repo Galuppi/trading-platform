@@ -1,10 +1,10 @@
 name: MondayOpenSwing
 display_name: Monday Open Swing 1.0
-enabled: true
+enabled: false
 total_strategy_capital: 50000
 positioning: capital
 holiday_calendar: us
-magic: 1004
+strategy_id: 1004
 
 market_hours:
   sessions:

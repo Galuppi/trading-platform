@@ -45,7 +45,7 @@ class TradeRecord:
     take_profit: Optional[float] = None
     commission: Optional[float] = None
     comment: Optional[str] = None
-    magic: Optional[int] = 0
+    strategy_id: Optional[int] = 0
     profit: Optional[float] = None
     slippage_entry: Optional[float] = None
     slippage_exit: Optional[float] = None
@@ -80,7 +80,7 @@ class OrderRequest:
     comment: Optional[str] = ""
     price: Optional[float] = None
     strategy_name: Optional[str] = ""
-    magic: Optional[int] = 0
+    strategy_id: Optional[int] = 0
 
 @dataclass
 class ProfitResult:

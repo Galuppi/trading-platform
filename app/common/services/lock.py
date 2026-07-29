@@ -5,9 +5,12 @@ get blocked by a stale lock. The environment string is passed in by the
 caller — this module never reads the environment itself.
 """
 
+import logging
 from pathlib import Path
 
 from app.common.config.constants import ENVIRONMENT_PRODUCTION
+
+logger = logging.getLogger(__name__)
 
 
 def is_already_running(lock_path: Path, environment: str) -> bool:
@@ -26,5 +29,5 @@ def release_lock(lock_path: Path) -> None:
     try:
         if lock_path.exists():
             lock_path.unlink()
-    except Exception:
-        pass
+    except Exception as error:
+        logger.debug("Could not remove lock file %s: %s", lock_path, error)

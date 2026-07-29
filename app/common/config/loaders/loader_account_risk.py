@@ -15,21 +15,21 @@ def load_account_risk() -> AccountRisk:
     with open(path, "r") as file:
         data = yaml.safe_load(file) or {}
     risk_data = data.get("risk", {})
-    enable_account_risk=risk_data["account_risk_enabled"]
-    if not enable_account_risk:
+    risk_enabled = risk_data["enabled"]
+    if not risk_enabled:
         return AccountRisk(
-            account_risk_enabled=False,
-            account_stop_loss=0.0,
-            account_take_profit=0.0,
-            account_break_even=0.0,
-            account_profit_level=0.0,
-            account_take_profit_week=0.0,
+            enabled=False,
+            stop_loss=0.0,
+            take_profit=0.0,
+            break_even=0.0,
+            profit_level=0.0,
+            take_profit_week=0.0,
         )
     return AccountRisk(
-        account_risk_enabled=True,
-        account_stop_loss=risk_data["account_stop_loss"],
-        account_take_profit=risk_data["account_take_profit"],
-        account_break_even=risk_data["account_break_even"],
-        account_profit_level=risk_data["account_profit_level"],
-        account_take_profit_week=risk_data["account_take_profit_week"],
+        enabled=True,
+        stop_loss=risk_data["stop_loss"],
+        take_profit=risk_data["take_profit"],
+        break_even=risk_data["break_even"],
+        profit_level=risk_data["profit_level"],
+        take_profit_week=risk_data["take_profit_week"],
     )

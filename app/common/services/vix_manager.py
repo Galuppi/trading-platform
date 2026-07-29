@@ -55,7 +55,8 @@ class VixManager:
         except Exception as error:
             logger.warning(f"VIX refresh failed, keeping last known reading: {error}")
 
-    def get_value(self) -> Optional[float]:
+    @property
+    def value(self) -> Optional[float]:
         """Return the last known VIX value, or None if none has ever been read."""
         return self.reading.value if self.reading else None
 
@@ -65,5 +66,5 @@ class VixManager:
 
     def is_paused(self, threshold: float) -> bool:
         """Return True when the last known VIX value exceeds the given threshold."""
-        current_value = self.get_value()
+        current_value = self.value
         return current_value is not None and current_value > threshold

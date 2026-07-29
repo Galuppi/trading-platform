@@ -89,7 +89,7 @@ class BreakOutStrategy(Strategy):
                     f"[{self.strategy_name}] Failed to get open price for {symbol}: {e}"
                 )
 
-    def is_entry_signal(self, asset: AssetConfig) -> str | None:
+    def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
         if self.state_manager.get_target_reached():
             return None
        

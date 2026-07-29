@@ -27,8 +27,8 @@ from app.common.config.constants import (
     TRADE_DIRECTION_SELL,
     TRADE_STATUS_OPEN,
 )
-from app.factories.factory_traderecord import create_trade_record
-from app.factories.factory_orderrequest import build_order_request
+from app.factories.factory_traderecord import get_trade_record
+from app.factories.factory_orderrequest import get_order_request
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ class Strategy(ABC):
 
     def prepare_order(self, asset: AssetConfig, direction: str) -> OrderRequest:
         """Build an order request with calculated lot size based on strategy rules."""
-        return build_order_request(
+        return get_order_request(
             asset=asset,
             direction=direction,
             config=self.config,
@@ -191,7 +191,7 @@ class Strategy(ABC):
         result = self.trade.open_position(order)
 
         if result.accepted:
-            trade = create_trade_record(
+            trade = get_trade_record(
                 result=result,
                 order=order,
                 entry_price=entry_price,

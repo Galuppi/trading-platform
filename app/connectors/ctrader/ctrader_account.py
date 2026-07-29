@@ -168,7 +168,7 @@ class CTraderAccount(Account):
         seconds_since_midnight = details.schedule[0].startSecond % 86400
         return round(seconds_since_midnight / 3600) % 24
 
-    def get_server_tick_timestanp(self) -> Optional[int]:
+    def get_server_tick_timestamp(self) -> Optional[int]:
         """Return a value that changes every call, so the engine always recomputes the offset.
 
         cTrader's spot event for a non-traded reference symbol can freeze at

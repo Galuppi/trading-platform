@@ -157,20 +157,20 @@ class BaseEngine(ABC):
 
         try:
             risk_manager = self.risk_manager
-            account_take_profit = risk_manager.get_account_take_profit() if risk_manager else 0
-            account_stop_loss = risk_manager.get_account_stop_loss() if risk_manager else 0
-            account_break_even = risk_manager.get_account_break_even() if risk_manager else 0
-            account_risk_enabled = risk_manager.get_account_risk_enabled() if risk_manager else False
+            account_take_profit = risk_manager.take_profit if risk_manager else 0
+            account_stop_loss = risk_manager.stop_loss if risk_manager else 0
+            account_break_even = risk_manager.break_even if risk_manager else 0
+            account_risk_enabled = risk_manager.enabled if risk_manager else False
             begin_balance = self.state_manager.get_begin_balance()
 
             equity = self.account.get_equity()
             balance = self.account.get_balance()
 
-            account_take_profit_week = self.risk_manager.get_account_take_profit_week()
+            account_take_profit_week = self.risk_manager.take_profit_week
             begin_balance_week = self.state_manager.get_begin_balance_week()
             break_even_reached = self.state_manager.get_break_even_reached()
             weekly_profit_reached = self.state_manager.get_weekly_profit_reached()
-            account_profit_level = self.risk_manager.get_account_profit_level()
+            account_profit_level = self.risk_manager.profit_level
             target_reached = self.state_manager.get_target_reached()
 
             take_profit_reached = equity - begin_balance >= account_take_profit if account_risk_enabled and begin_balance > 0 else False
@@ -179,7 +179,7 @@ class BaseEngine(ABC):
             if not break_even_reached and begin_balance > 0:
                 break_even_reached = equity - begin_balance >= account_break_even if account_risk_enabled else False
                 if break_even_reached:
-                    self.risk_manager.update_account_stop_loss(account_profit_level)
+                    self.risk_manager.stop_loss = account_profit_level
                     self.notify_manager.send_notification("Break-even level reached. Adjusting account stop loss.", "Break-Even Hit")
                     logger.info("Break-even level reached. Adjusting account stop loss.")
 

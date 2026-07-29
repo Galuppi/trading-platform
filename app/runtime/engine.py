@@ -35,7 +35,7 @@ class Engine(BaseEngine):
                 current_timestamp = PlatformTime.timestamp()
 
                 last_tick_timestamp = self.state_manager.get_server_last_tick()
-                current_tick_timestamp = self.account.get_server_tick_timestanp()
+                current_tick_timestamp = self.account.get_server_tick_timestamp()
 
                 server_time_offset = None   
                 if last_tick_timestamp is not None and last_tick_timestamp != current_tick_timestamp:

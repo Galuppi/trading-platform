@@ -1,10 +1,10 @@
 name: BreakOut
 display_name: Range breakout 1.0
-enabled: true
+enabled: false
 total_strategy_capital: 50000
 positioning: risk
 holiday_calendar: us
-magic: 1001
+strategy_id: 1001
 
 market_hours:
   sessions:

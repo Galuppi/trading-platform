@@ -177,7 +177,7 @@ class Mt5Account(Account):
         logger.error("Unable to retrieve account info after retries. Broker connection likely down.")
         return None
 
-    def get_server_tick_timestanp(self) -> Optional[int]:
+    def get_server_tick_timestamp(self) -> Optional[int]:
         tick = mt5.symbol_info_tick(TIME_REFERENCE_SYMBOL)   
         if not tick:
             return None

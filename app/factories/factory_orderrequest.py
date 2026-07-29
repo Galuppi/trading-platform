@@ -9,7 +9,7 @@ from app.common.services.calculator import Calculator
 from app.common.config.constants import POSITIONING_RISK
 
 
-def build_order_request(
+def get_order_request(
     asset: AssetConfig,
     direction: str,
     config: StrategyConfig,
@@ -31,7 +31,7 @@ def build_order_request(
         risk_percent=asset.risk_percent or 0,
         comment=strategy_display_name,
         reward_risk_ratio=asset.reward_risk_ratio or 0,
-        magic=config.magic,
+        strategy_id=config.strategy_id,
     )
 
     stop_loss_points = calculator.calculate_stop_loss_points(

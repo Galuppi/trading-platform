@@ -2,6 +2,8 @@
 
 import logging
 
+from typing import Optional
+
 from app.base.base_strategy import Strategy
 from app.common.models.model_strategy import StrategyConfig, AssetConfig
 from app.common.models.model_trade import TradeRecord
@@ -67,7 +69,7 @@ class GoLongExtStrategy(Strategy):
                     f"[{self.strategy_name}] Failed to calculate range for {asset.symbol}: {e}"
                 )
 
-    def is_entry_signal(self, asset: AssetConfig) -> str | None:
+    def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
         if self.state_manager.get_target_reached():
             return None
 

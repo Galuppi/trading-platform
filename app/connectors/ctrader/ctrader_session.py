@@ -39,9 +39,15 @@ any real reliance on them:
   currency equals the account currency (no cross-currency conversion is
   applied). Fine for USD-quoted instruments on a USD account; will be wrong
   otherwise.
-- Access token lifetime is not documented precisely; the session refreshes it
-  once at connect time. If long-running sessions start hitting auth errors,
-  add periodic refresh.
+- Access token lifetime is ~2,628,000s (30 days), per Spotware's docs. Two
+  mechanisms keep long-running sessions alive without ever hitting a live
+  expiry: (1) `connection_check()` proactively refreshes the token once
+  `ACCESS_TOKEN_REFRESH_INTERVAL_SECONDS` has elapsed since the last refresh
+  (called every ~30s from the engine loop), and (2) `_request()` reactively
+  catches an `OA_AUTH_TOKEN_EXPIRED` error response and transparently
+  refreshes + retries the request once. Both paths call `_refresh_access_token()`
+  followed by `_authenticate_account()`, since a refreshed access token must be
+  re-sent via `ProtoOAAccountAuthReq` to remain valid for the session.
 """
 
 from __future__ import annotations
@@ -78,6 +84,14 @@ EXECUTION_TYPE_FILLED = 3
 EXECUTION_TYPE_REJECTED = 7
 TERMINAL_EXECUTION_TYPES = (EXECUTION_TYPE_FILLED, EXECUTION_TYPE_REJECTED)
 
+# Documented access token lifetime is ~2,628,000s (30 days). Refresh well
+# before that so a long-running session never hits a live expiry.
+ACCESS_TOKEN_REFRESH_INTERVAL_SECONDS = 20 * 24 * 60 * 60  # 20 days
+
+# errorCode returned by cTrader when an API call is made with an expired
+# access token (confirmed via Spotware community forum, not in the proto enum).
+AUTH_TOKEN_EXPIRED_ERROR_CODE = "OA_AUTH_TOKEN_EXPIRED"
+
 
 class CTraderSession:
     """Process-wide singleton wrapping one cTrader Open API connection."""
@@ -108,6 +122,7 @@ class CTraderSession:
 
         self.ctid_trader_account_id: Optional[int] = None
         self._access_token: Optional[str] = None
+        self._last_token_refresh_time: Optional[float] = None
 
         # symbol caches, keyed by cTrader symbolId and by upper-cased symbol name
         self._symbols_by_name: Dict[str, Any] = {}   # name -> ProtoOALightSymbol
@@ -177,7 +192,26 @@ class CTraderSession:
             return False
 
     def connection_check(self) -> bool:
-        return self.is_connected()
+        if not self.is_connected():
+            return False
+
+        if self._access_token_due_for_refresh():
+            logger.info("cTrader access token approaching expiry; refreshing proactively.")
+            try:
+                self._refresh_access_token()
+                self._authenticate_account()
+            except Exception as error:
+                logger.error(f"Proactive cTrader access token refresh failed: {error}")
+                with self._state_lock:
+                    self._account_authenticated = False
+                return False
+
+        return True
+
+    def _access_token_due_for_refresh(self) -> bool:
+        if self._last_token_refresh_time is None:
+            return False
+        return (time.time() - self._last_token_refresh_time) >= ACCESS_TOKEN_REFRESH_INTERVAL_SECONDS
 
     # ------------------------------------------------------------------
     # Reactor thread management
@@ -284,6 +318,7 @@ class CTraderSession:
             raise RuntimeError(f"Failed to refresh cTrader access token: {token_response}")
 
         self._access_token = access_token
+        self._last_token_refresh_time = time.time()
         logger.info("cTrader access token refreshed.")
 
         new_refresh_token = token_response.get("refreshToken")
@@ -623,7 +658,7 @@ class CTraderSession:
     # Low-level send helpers
     # ------------------------------------------------------------------
 
-    def _request(self, message, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> Any:
+    def _request(self, message, timeout: int = DEFAULT_TIMEOUT_SECONDS, _retried: bool = False) -> Any:
         """Send a request that has a matching Res message and block for the response."""
         from ctrader_open_api import Protobuf
         from twisted.internet import reactor
@@ -636,10 +671,24 @@ class CTraderSession:
             reactor, self._client.send, message, None, timeout
         )
         response = Protobuf.extract(raw_response)
+
+        if not _retried and self._is_auth_expired_error(response):
+            logger.warning("cTrader access token expired mid-session; refreshing and retrying request once.")
+            self._refresh_access_token()
+            self._authenticate_account()
+            return self._request(message, timeout=timeout, _retried=True)
+
         self._raise_if_error(response)
         return response
 
-    def _fire_and_forget(self, message) -> None:
+    @staticmethod
+    def _is_auth_expired_error(response: Any) -> bool:
+        return (
+            response.__class__.__name__ == "ProtoOAErrorRes"
+            and getattr(response, "errorCode", None) == AUTH_TOKEN_EXPIRED_ERROR_CODE
+        )
+
+    def _fire_and_forget(self, message, _retried: bool = False) -> None:
         """Send a request that has no matching Res (order/close); ignore ack timeout, rely on events."""
         from twisted.internet import reactor
         from twisted.internet.threads import blockingCallFromThread
@@ -654,6 +703,14 @@ class CTraderSession:
             from ctrader_open_api import Protobuf
 
             response = Protobuf.extract(raw_response)
+
+            if not _retried and self._is_auth_expired_error(response):
+                logger.warning("cTrader access token expired mid-session; refreshing and retrying order request once.")
+                self._refresh_access_token()
+                self._authenticate_account()
+                self._fire_and_forget(message, _retried=True)
+                return
+
             self._raise_if_error(response)
         except TimeoutError:
             # Expected: order/close confirmation comes via ExecutionEvent, not a Res.

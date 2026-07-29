@@ -1,0 +1,87 @@
+name: News Cross
+display_name: News Cross 1.0
+enabled: true
+total_strategy_capital: 50000
+positioning: risk
+holiday_calendar: us
+strategy_id: 1005
+vix_pause_enabled: true
+vix_threshold: 20
+signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
+
+market_hours:
+  sessions:
+    Monday:
+      open_time: "01:05"
+      close_time: "23:45"
+    Tuesday:
+      open_time: "01:05"
+      close_time: "23:45"
+    Wednesday:
+      open_time: "01:05"
+      close_time: "23:45"
+    Thursday:
+      open_time: "01:05"
+      close_time: "23:45"
+    Friday:
+      open_time: "01:05"
+      close_time: "23:45"
+    Saturday:
+      open_time: "00:00"
+      close_time: "00:00"
+    Sunday:
+      open_time: "01:05"
+      close_time: "23:45"
+
+assets:
+  - symbol: US30.cash
+    open_min: 65
+    open_day: 1
+    close_min: 1400
+    close_day: 5
+    risk_percent: 0.5
+    reward_risk_ratio: 2
+    signal_symbol: US30
+    max_total_trades: 10
+    max_buy_trades: 5
+    max_sell_trades: 5
+    percent_of_capital: 145
+
+  - symbol: US100.cash
+    open_min: 65
+    open_day: 1
+    close_min: 1400
+    close_day: 5
+    risk_percent: 0.5
+    reward_risk_ratio: 2.5
+    signal_symbol: US100
+    max_total_trades: 10
+    max_buy_trades: 5
+    max_sell_trades: 5
+    percent_of_capital: 255
+
+  - symbol: US500.cash
+    open_min: 65
+    open_day: 1
+    close_day: 5
+    close_min: 1400
+    risk_percent: 0.5
+    reward_risk_ratio: 2
+    signal_symbol: US500
+    max_total_trades: 10
+    max_buy_trades: 5
+    max_sell_trades: 5
+    percent_of_capital: 145
+
+  - symbol: BTCUSD
+    open_min: 65
+    open_day: 7
+    close_day: 5
+    close_min: 1400
+    risk_percent: 1.5
+    reward_risk_ratio: 2.5
+    signal_symbol: BTCUSD
+    max_total_trades: 10
+    max_buy_trades: 5
+    max_sell_trades: 5
+    percent_of_capital: 18

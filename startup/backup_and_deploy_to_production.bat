@@ -7,7 +7,7 @@ echo --------------------------------------------
 
 REM ==== CONFIGURATION ====
 set "SOURCE=%~dp0.."
-set "DEST=C:\Apps\CTrader"
+set "DEST=C:\Apps\Trader"
 set "BACKUP_DIR=C:\Backups\prd_trader"
 set "PUBLIC_REPO_DIR=C:\Development\trading-platform"
 set "PYTHON_VERSION=3.12"
@@ -35,6 +35,9 @@ REM Generate timestamp YYYY-MM-DD_HHMMSS
 for /f %%A in ('wmic OS Get localdatetime ^| find "."') do set "dt=%%A"
 set "TS=%dt:~0,4%-%dt:~4,2%-%dt:~6,2%_%dt:~8,6%"
 
+REM REM Generate timestamp YYYY-MM-DD_HHMMSS
+REM for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmmss"') do set "TS=%%A"
+
 if exist "%DEST%\app" (
     xcopy "%DEST%\app" "%BACKUP_DIR%\%TS%_prd_app\" /E /I /Y /Q >nul 2>&1
     echo Backup created: %BACKUP_DIR%\%TS%_prd_app\
@@ -54,7 +57,7 @@ if not exist "%DEST%" (
 REM Copy application directories, excluding .env and state.json (config.yaml is now deployed)
 echo Copying application files...
 robocopy "%SOURCE%\app" "%DEST%\app" /E /XF *.env state.json ctrader_token.json /NFL /NDL /NJH /NJS /NC /NS >nul
-robocopy "%SOURCE%\history" "%DEST%\history" /E /XF *.env state.json /NFL /NDL /NJH /NJS /NC /NS >nul
+robocopy "%SOURCE%\guidelines" "%DEST%\guidelines" /E /NFL /NDL /NJH /NJS /NC /NS >nul
 robocopy "%SOURCE%\scripts" "%DEST%\scripts" /E /XF *.env /NFL /NDL /NJH /NJS /NC /NS >nul
 
 REM Copy configuration and startup scripts (excluding .env)
@@ -65,7 +68,8 @@ echo Copying startup scripts...
 copy /Y "%SOURCE%\startup\run_app_prod.bat" "%DEST%\run_app_prod.bat" >nul
 copy /Y "%SOURCE%\startup\restart_terminals.bat" "%DEST%\restart_terminals.bat" >nul
 copy /Y "%SOURCE%\startup\deploy_to_production.bat" "%DEST%\deploy_to_production.bat" >nul
-copy /Y "%SOURCE%\startup\release_app_prod.bat" "%DEST%\release_app_prod.bat" >nul
+copy /Y "%SOURCE%\startup\CTrader deploy.bat" "%DEST%\CTrader deploy.bat" >nul
+copy /Y "%SOURCE%\startup\MT5 trader deploy.bat" "%DEST%\MT5 trader deploy.bat" >nul
 
 REM Navigate to destination
 cd /d "%DEST%"
@@ -103,19 +107,19 @@ call "venv\Scripts\deactivate.bat"
 REM echo --------------------------------------------
 
 REM ---- PUBLISH TO PUBLIC REPO FOLDER ----
-REM echo Copying to public repo folder: "%PUBLIC_REPO_DIR%"
-REM if not exist "%PUBLIC_REPO_DIR%" (
-REM     echo Creating public repo folder: "%PUBLIC_REPO_DIR%"
-REM     mkdir "%PUBLIC_REPO_DIR%"
-REM )
+echo Copying to public repo folder: "%PUBLIC_REPO_DIR%"
+if not exist "%PUBLIC_REPO_DIR%" (
+    echo Creating public repo folder: "%PUBLIC_REPO_DIR%"
+    mkdir "%PUBLIC_REPO_DIR%"
+)
 
-REM REM Mirror the whole project into the public repo working copy, excluding
-REM REM secrets, runtime state, local envs, and generated/data folders.
-REM robocopy "%SOURCE%" "%PUBLIC_REPO_DIR%" /E ^
-REM     /XD .git venv venv-dev __pycache__ historical-data backtest-results logs .vscode ^
-REM     /XF *.env state.json ctrader_token.json *.log ^
-REM     /NFL /NDL /NJH /NJS /NC /NS >nul
-REM echo Public repo folder updated. Review and push from "%PUBLIC_REPO_DIR%" manually.
+REM Mirror the whole project into the public repo working copy, excluding
+REM secrets, runtime state, local envs, and generated/data folders.
+robocopy "%SOURCE%" "%PUBLIC_REPO_DIR%" /E ^
+    /XD .git venv venv-dev __pycache__ historical-data backtest-results logs .vscode ^
+    /XF *.env state.json ctrader_token.json *.log ^
+    /NFL /NDL /NJH /NJS /NC /NS >nul
+echo Public repo folder updated. Review and push from "%PUBLIC_REPO_DIR%" manually.
 
 echo.
 echo Deployment complete!

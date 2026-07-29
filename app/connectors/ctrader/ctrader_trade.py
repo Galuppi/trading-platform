@@ -49,7 +49,7 @@ class CTraderTrade(Trade):
                 api_volume=api_volume,
                 trade_side_enum=trade_side,
                 comment=order.comment or "Python trading system",
-                label=order.strategy_name or "",
+                label=str(order.strategy_id) if order.strategy_id else "",
             )
         except Exception as error:
             logger.error(f"cTrader open_position failed for {order.symbol}: {error}")

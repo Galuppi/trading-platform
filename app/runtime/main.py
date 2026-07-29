@@ -21,7 +21,7 @@ from app.factories.factory_platform import (
     get_trade,
     get_symbol,
 )
-from app.factories.factory_strategy import strategy_registry
+from app.factories.factory_strategy import get_strategies
 from app.runtime.engine import Engine
 from app.common.services.platform_time import PlatformTime
 from app.factories.factory_state_manager import get_state_manager
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     logger.info(f"Connected: Account #{connector_config.login}, Server: {connector_config.server}")
 
-    strategies = strategy_registry(
+    strategies = get_strategies(
         connector=connector,
         account=account,
         symbol=symbol,

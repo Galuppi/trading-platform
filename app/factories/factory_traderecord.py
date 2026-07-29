@@ -5,7 +5,7 @@ from app.common.services.platform_time import PlatformTime
 from app.common.config.constants import TRADE_STATUS_OPEN
 
 
-def create_trade_record(
+def get_trade_record(
     result: OrderResult,
     order: OrderRequest,
     entry_price: float,
@@ -21,7 +21,7 @@ def create_trade_record(
         timestamp=PlatformTime.datetime_str(),
         strategy=strategy_name,
         comment=order.comment,
-        magic=order.magic,
+        strategy_id=order.strategy_id,
         entry_price=entry_price,
         stop_loss=order.stop_loss,
         take_profit=order.take_profit,

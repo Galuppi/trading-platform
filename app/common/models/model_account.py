@@ -32,9 +32,9 @@ class AccountSnapshot:
 @dataclass
 class AccountRisk:
     """Configured account-level risk thresholds."""
-    account_risk_enabled: bool
-    account_stop_loss: float
-    account_take_profit: float
-    account_break_even: float
-    account_profit_level: float
-    account_take_profit_week: float
+    enabled: bool
+    stop_loss: float
+    take_profit: float
+    break_even: float
+    profit_level: float
+    take_profit_week: float

@@ -1,7 +1,7 @@
 risk:
-  account_risk_enabled: true
-  account_stop_loss: -3000
-  account_take_profit: 2500
-  account_break_even: 2000
-  account_profit_level: 2000
-  account_take_profit_week: 5000
+  enabled: true
+  stop_loss: -3000
+  take_profit: 2500
+  break_even: 2000
+  profit_level: 2000
+  take_profit_week: 5000

@@ -1,5 +1,6 @@
 """This module defines classes related to StateManager."""
 import json
+import logging
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
@@ -9,6 +10,8 @@ from app.common.models.model_trade import TradeRecord
 from app.common.models.model_account import AccountSnapshot
 from app.base.base_account import Account
 from app.common.models.model_news import FaireconomyEvent
+
+logger = logging.getLogger(__name__)
 
 TradeLike = Union[TradeRecord, Dict[str, Any]]
 
@@ -40,8 +43,8 @@ class StateManager:
                             continue
                         try:
                             self._cache[k] = TradeRecord(**tdata)
-                        except Exception:
-                            pass
+                        except Exception as error:
+                            logger.warning("Could not load persisted trade '%s' into cache: %s", tid, error)
                     return {self._key(k): v for k, v in data.items()}
         return {}
 
@@ -80,8 +83,8 @@ class StateManager:
                 new_trades[k] = item
                 try:
                     new_cache[k] = TradeRecord(**item)
-                except Exception:
-                    pass
+                except Exception as error:
+                    logger.warning("Could not cache trade '%s': %s", item.get("id"), error)
             else:
                 raise TypeError("save_all_trades expects TradeRecord or dicts with an 'id' key")
         self.state = {**meta, **new_trades}
@@ -487,7 +490,7 @@ class StateManager:
         except Exception:
             return None
 
-    def get_floating_profit(self, symbol: str | None = None) -> float:
+    def get_floating_profit(self, symbol: Optional[str] = None) -> float:
         total_profit = 0.0
         for trade in self.get_all_trades():
             if trade.status != TRADE_STATUS_OPEN:
