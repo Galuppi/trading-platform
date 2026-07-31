@@ -37,19 +37,49 @@ class NewsCrossStrategy(Strategy):
     def _get_signal(self, signal_symbol: str) -> Optional[Signal]:
         return self.signals.get(signal_symbol)
 
-    def _is_buy_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
-        if not signal or signal.sma24 is None or signal.sma4 is None:
-            return False
-        if self.is_vix_paused():
-            return False
-        return signal.sma4 > signal.sma24
+    def _passes_atr_gate(self, spread: float, atr24: Optional[float]) -> bool:
+        """Veto a crossover if the SMA spread is still within typical recent
+        volatility (i.e. likely zigzag noise rather than a real trend shift).
+        Entries only -- callers on the exit path must pass apply_gate=False.
 
-    def _is_sell_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
+        signal-provider computes news_atr24 as score-to-score jitter between
+        consecutive news events for a symbol (time-windowed, same 1-day
+        window as sma24), not price movement -- it's an analogous but
+        distinct concept from the quotes-side ATR proxy. Verify the ratio
+        behaves sensibly for this strategy's own history before enabling,
+        rather than assuming the same multiplier as Quotes Cross applies."""
+        if not self.config.atr_gate_enabled:
+            return True
+        if atr24 is None or atr24 == 0:
+            logger.warning("ATR gate enabled but atr24 missing/zero for signal — blocking entry")
+            return False
+        ratio = abs(spread) / atr24
+        if ratio <= self.config.atr_gate_multiplier:
+            logger.debug(f"ATR gate blocked entry: ratio={ratio:.2f} <= k={self.config.atr_gate_multiplier:.2f}")
+            return False
+        return True
+
+    def _is_buy_signal(self, signal: Optional[Signal], asset: AssetConfig, apply_gate: bool = True) -> bool:
         if not signal or signal.sma24 is None or signal.sma4 is None:
             return False
         if self.is_vix_paused():
             return False
-        return signal.sma4 < signal.sma24
+        if signal.sma4 <= signal.sma24:
+            return False
+        if apply_gate and not self._passes_atr_gate(signal.sma4 - signal.sma24, signal.atr24):
+            return False
+        return True
+
+    def _is_sell_signal(self, signal: Optional[Signal], asset: AssetConfig, apply_gate: bool = True) -> bool:
+        if not signal or signal.sma24 is None or signal.sma4 is None:
+            return False
+        if self.is_vix_paused():
+            return False
+        if signal.sma4 >= signal.sma24:
+            return False
+        if apply_gate and not self._passes_atr_gate(signal.sma4 - signal.sma24, signal.atr24):
+            return False
+        return True
 
     def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
         if not PlatformTime.is_within_weekday_range(asset.open_day or 1, asset.close_day or 5):
@@ -135,10 +165,10 @@ class NewsCrossStrategy(Strategy):
 
         first_open_trade = self.state_manager.get_first_open_trade(trade.symbol, strategy=self.strategy_name)
         first_open_trade_direction = first_open_trade.type if first_open_trade else None
-        if self._is_buy_signal(signal, trade):
+        if self._is_buy_signal(signal, trade, apply_gate=False):
             if first_open_trade_direction == TRADE_DIRECTION_SELL:
                 return True
-        if self._is_sell_signal(signal, trade):
+        if self._is_sell_signal(signal, trade, apply_gate=False):
             if first_open_trade_direction == TRADE_DIRECTION_BUY:
                 return True
         return False
@@ -194,6 +224,7 @@ class NewsCrossStrategy(Strategy):
                         countsma24=signal_entry.get("countsma24"),
                         countsma4=signal_entry.get("countsma4"),
                         countsma1=signal_entry.get("countsma1"),
+                        atr24=signal_entry.get("atr24"),
                         timestamp=signal_entry.get("timestamp"),
                     )
                     parsed_signals.append(signal_obj)

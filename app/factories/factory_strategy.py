@@ -65,6 +65,8 @@ def get_strategy_config(config_path: Path) -> StrategyConfig:
         signal_feed=raw_config.get("signal_feed", ""),
         vix_pause_enabled=raw_config.get("vix_pause_enabled", False),
         vix_threshold=raw_config.get("vix_threshold"),
+        atr_gate_enabled=raw_config.get("atr_gate_enabled", False),
+        atr_gate_multiplier=raw_config.get("atr_gate_multiplier", 1.5),
     )
 
 
