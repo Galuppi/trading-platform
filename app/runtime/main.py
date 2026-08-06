@@ -31,6 +31,7 @@ from app.factories.factory_risk_manager import get_risk_manager
 from app.factories.factory_vix_manager import get_vix_manager
 from app.factories.factory_notify_manager import get_notify_manager
 from app.factories.factory_sync_manager import get_sync_manager
+from app.factories.factory_deal_archive_manager import get_deal_archive_manager
 
 logger = logging.getLogger(__name__)
 
@@ -65,11 +66,21 @@ if __name__ == "__main__":
     calculator = get_calculator(symbol, account)
     trade = get_trade(platform_name, symbol, calculator)
     sync_manager = get_sync_manager(state_manager, notify_manager)
+    deal_archive_manager = get_deal_archive_manager(
+        platform=platform_name,
+        account_id=str(connector_config.account_id or connector_config.login or "unknown"),
+    )
 
     connector = get_connector(platform_name, connector_config, state_manager)
     if not connector.connect():
         logger.error("Failed to connect to trading platform.")
-        raise RuntimeError("Platform connection failed.")
+        notify_manager.send_notification(
+            f"{connector_config.environment}/{platform_name}: failed to connect to trading platform (account #{connector_config.login}, server {connector_config.server}).",
+            "Trader App Down",
+            1,
+        )
+        release_lock(LOCK_FILE_PATH)
+        sys.exit(1)
 
     logger.info(f"Connected: Account #{connector_config.login}, Server: {connector_config.server}")
 
@@ -98,6 +109,7 @@ if __name__ == "__main__":
         risk_manager=risk_manager,
         notify_manager=notify_manager,
         sync_manager=sync_manager,
+        deal_archive_manager=deal_archive_manager,
     )
 
     try:
@@ -106,6 +118,10 @@ if __name__ == "__main__":
         logger.info("Interrupted by user — shutting down.")
     except Exception as e:
         logger.exception(f"Fatal error: {e}")
-        input("Press Enter to exit...")
+        notify_manager.send_notification(
+            f"{connector_config.environment}/{platform_name}: engine crashed and stopped ({e}). No trading is happening until it's restarted.",
+            "Trader App Down",
+            1,
+        )
     finally:
         release_lock(LOCK_FILE_PATH)

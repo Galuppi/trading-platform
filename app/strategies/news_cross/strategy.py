@@ -1,4 +1,13 @@
-"""SMA crossover strategy driven by news sentiment scoring."""
+"""SMA crossover strategy driven by news sentiment scoring, confirmed by
+quotes-side price direction on both entry and exit.
+
+NOTE: because news flips direction far more often than quotes (empirically
+~7x/day vs ~1x/day for the symbols tested), requiring quotes confirmation on
+BOTH entry and exit makes quotes the de-facto pace-setter for this strategy:
+a position change only fires once quotes has (recently) flipped AND the next
+news reading agrees. This is a deliberate design choice -- effectively a
+delayed, news-filtered price-cross -- not an accidental side effect. See
+strategy discussion 2026-08-02 for the empirical basis."""
 
 import json
 import logging
@@ -17,14 +26,17 @@ from app.common.config.constants import TRADE_DIRECTION_SELL, TRADE_DIRECTION_BU
 logger = logging.getLogger(__name__)
 
 ACT_ON_NEWS_RELEASES = False
-TRADE_CATEGORY = "news" 
+TRADE_CATEGORY = "news"
+CONFIRMATION_CATEGORY = "quotes"  # category used to confirm news-cross direction
 
 
 class NewsCrossStrategy(Strategy):
-    """SMA crossover strategy driven by news sentiment scoring."""
+    """SMA crossover strategy driven by news sentiment scoring, confirmed by
+    quotes-side price direction."""
     def __init__(self, config: StrategyConfig) -> None:
         super().__init__(config=config)
         self.signals: Dict[str, Signal] = {}
+        self.quotes_signals: Dict[str, Signal] = {}
         self.last_load: Optional[float] = None
         self.resume_trading: bool = False
 
@@ -37,47 +49,48 @@ class NewsCrossStrategy(Strategy):
     def _get_signal(self, signal_symbol: str) -> Optional[Signal]:
         return self.signals.get(signal_symbol)
 
-    def _passes_atr_gate(self, spread: float, atr24: Optional[float]) -> bool:
-        """Veto a crossover if the SMA spread is still within typical recent
-        volatility (i.e. likely zigzag noise rather than a real trend shift).
-        Entries only -- callers on the exit path must pass apply_gate=False.
+    def _get_quotes_signal(self, signal_symbol: str) -> Optional[Signal]:
+        return self.quotes_signals.get(signal_symbol)
 
-        signal-provider computes news_atr24 as score-to-score jitter between
-        consecutive news events for a symbol (time-windowed, same 1-day
-        window as sma24), not price movement -- it's an analogous but
-        distinct concept from the quotes-side ATR proxy. Verify the ratio
-        behaves sensibly for this strategy's own history before enabling,
-        rather than assuming the same multiplier as Quotes Cross applies."""
-        if not self.config.atr_gate_enabled:
-            return True
-        if atr24 is None or atr24 == 0:
-            logger.warning("ATR gate enabled but atr24 missing/zero for signal — blocking entry")
-            return False
-        ratio = abs(spread) / atr24
-        if ratio <= self.config.atr_gate_multiplier:
-            logger.debug(f"ATR gate blocked entry: ratio={ratio:.2f} <= k={self.config.atr_gate_multiplier:.2f}")
-            return False
-        return True
+    def _passes_quotes_confirmation(self, direction: str, signal_symbol: str) -> bool:
+        """Require the quotes-side SMA relationship to agree with the news-side
+        crossover direction. Simple sign check, no magnitude/threshold.
 
-    def _is_buy_signal(self, signal: Optional[Signal], asset: AssetConfig, apply_gate: bool = True) -> bool:
+        Applied to BOTH entries and exits (no require_confirmation bypass on
+        the exit path) -- a position only changes once quotes agrees with the
+        new direction, which in practice means quotes sets the pace since it
+        flips far less often than news. See module docstring."""
+        quotes_signal = self._get_quotes_signal(signal_symbol)
+        if not quotes_signal or quotes_signal.sma4 is None or quotes_signal.sma24 is None:
+            logger.warning(
+                f"Quotes confirmation required but quotes signal missing/incomplete for '{signal_symbol}' — blocking"
+            )
+            return False
+        if direction == TRADE_DIRECTION_BUY:
+            return quotes_signal.sma4 > quotes_signal.sma24
+        if direction == TRADE_DIRECTION_SELL:
+            return quotes_signal.sma4 < quotes_signal.sma24
+        return False
+
+    def _is_buy_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
         if not signal or signal.sma24 is None or signal.sma4 is None:
             return False
         if self.is_vix_paused():
             return False
         if signal.sma4 <= signal.sma24:
             return False
-        if apply_gate and not self._passes_atr_gate(signal.sma4 - signal.sma24, signal.atr24):
+        if not self._passes_quotes_confirmation(TRADE_DIRECTION_BUY, signal.symbol):
             return False
         return True
 
-    def _is_sell_signal(self, signal: Optional[Signal], asset: AssetConfig, apply_gate: bool = True) -> bool:
+    def _is_sell_signal(self, signal: Optional[Signal], asset: AssetConfig) -> bool:
         if not signal or signal.sma24 is None or signal.sma4 is None:
             return False
         if self.is_vix_paused():
             return False
         if signal.sma4 >= signal.sma24:
             return False
-        if apply_gate and not self._passes_atr_gate(signal.sma4 - signal.sma24, signal.atr24):
+        if not self._passes_quotes_confirmation(TRADE_DIRECTION_SELL, signal.symbol):
             return False
         return True
 
@@ -165,19 +178,41 @@ class NewsCrossStrategy(Strategy):
 
         first_open_trade = self.state_manager.get_first_open_trade(trade.symbol, strategy=self.strategy_name)
         first_open_trade_direction = first_open_trade.type if first_open_trade else None
-        if self._is_buy_signal(signal, trade, apply_gate=False):
+        if self._is_buy_signal(signal, trade):
             if first_open_trade_direction == TRADE_DIRECTION_SELL:
                 return True
-        if self._is_sell_signal(signal, trade, apply_gate=False):
+        if self._is_sell_signal(signal, trade):
             if first_open_trade_direction == TRADE_DIRECTION_BUY:
                 return True
         return False
+
+    def _parse_signal_entries(self, entries: List[dict]) -> Dict[str, Signal]:
+        parsed: Dict[str, Signal] = {}
+        for signal_entry in entries:
+            try:
+                signal_obj = Signal(
+                    symbol=signal_entry.get("symbol"),
+                    category=signal_entry.get("category"),
+                    sma24=signal_entry.get("sma24"),
+                    sma4=signal_entry.get("sma4"),
+                    sma1=signal_entry.get("sma1"),
+                    countsma24=signal_entry.get("countsma24"),
+                    countsma4=signal_entry.get("countsma4"),
+                    countsma1=signal_entry.get("countsma1"),
+                    timestamp=signal_entry.get("timestamp"),
+                )
+                if signal_obj.symbol:
+                    parsed[signal_obj.symbol] = signal_obj
+            except Exception as error:
+                logger.warning(f"Invalid signal entry skipped: {error}")
+        return parsed
 
     def _load_signals(self) -> None:
         try:
             signal_feed_path = Path(self.config.signal_feed)
             if not signal_feed_path.exists():
                 self.signals = {}
+                self.quotes_signals = {}
                 return
 
             file_modified_time = signal_feed_path.stat().st_mtime
@@ -188,6 +223,7 @@ class NewsCrossStrategy(Strategy):
                 raw_data = f.read()
                 if not raw_data.strip():
                     self.signals = {}
+                    self.quotes_signals = {}
                     return
                 signal_payload = json.loads(raw_data)
 
@@ -195,6 +231,7 @@ class NewsCrossStrategy(Strategy):
             if not file_timestamp_str:
                 logger.warning("Signal file missing 'timestamp' field")
                 self.signals = {}
+                self.quotes_signals = {}
                 return
 
             try:
@@ -205,39 +242,26 @@ class NewsCrossStrategy(Strategy):
                 if age > PlatformTime.timedelta(hours=1):
                     logger.info(f"Signal file too old: {file_timestamp_str} ({age}), skipping load")
                     self.signals = {}
+                    self.quotes_signals = {}
                     self.last_load = None
                     return
             except Exception as e:
                 logger.warning(f"Failed to parse timestamp '{file_timestamp_str}': {e}, skipping file")
                 self.signals = {}
+                self.quotes_signals = {}
                 return
 
-            parsed_signals = []
-            for signal_entry in signal_payload.get(TRADE_CATEGORY, []):
-                try:
-                    signal_obj = Signal(
-                        symbol=signal_entry.get("symbol"),
-                        category=signal_entry.get("category"),
-                        sma24=signal_entry.get("sma24"),
-                        sma4=signal_entry.get("sma4"),
-                        sma1=signal_entry.get("sma1"),
-                        countsma24=signal_entry.get("countsma24"),
-                        countsma4=signal_entry.get("countsma4"),
-                        countsma1=signal_entry.get("countsma1"),
-                        atr24=signal_entry.get("atr24"),
-                        timestamp=signal_entry.get("timestamp"),
-                    )
-                    parsed_signals.append(signal_obj)
-                except Exception as error:
-                    logger.warning(f"Invalid signal entry skipped: {error}")
-
-            self.signals = {signal.symbol: signal for signal in parsed_signals if signal.symbol}
+            self.signals = self._parse_signal_entries(signal_payload.get(TRADE_CATEGORY, []))
+            self.quotes_signals = self._parse_signal_entries(signal_payload.get(CONFIRMATION_CATEGORY, []))
             self.last_load = file_modified_time
             logger.info(
-                f"Loaded {len(self.signals)} fresh '{TRADE_CATEGORY}' signals from {file_timestamp_str}"
+                f"Loaded {len(self.signals)} fresh '{TRADE_CATEGORY}' signals and "
+                f"{len(self.quotes_signals)} '{CONFIRMATION_CATEGORY}' confirmation signals from {file_timestamp_str}"
             )
 
         except Exception as error:
             logger.error(f"Failed to load signal file: {error}")
             self.signals = {}
+            self.quotes_signals = {}
             self.last_load = None
+            

@@ -7,13 +7,6 @@ holiday_calendar: us
 strategy_id: 1005
 vix_pause_enabled: true
 vix_threshold: 18
-# NOTE: news_atr24 is score-jitter between consecutive news events (time-
-# windowed, same 1-day window as sma24), not price volatility -- a related
-# but distinct concept from the quotes-side ATR proxy. Verify the ratio
-# behaves sensibly on this strategy's own signal history before enabling;
-# don't assume Quotes Cross's multiplier transfers directly.
-atr_gate_enabled: false
-atr_gate_multiplier: 1.5
 signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
 
 market_hours:

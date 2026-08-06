@@ -60,8 +60,6 @@ class StrategyConfig:
     symbol_mapping_file: Optional[str] = None
     vix_pause_enabled: bool = False
     vix_threshold: Optional[float] = None
-    atr_gate_enabled: bool = False
-    atr_gate_multiplier: float = 1.5
 
     @classmethod
     def from_dict(cls, data: dict) -> "StrategyConfig":
@@ -99,4 +97,3 @@ class Signal:
     countsma4: Optional[int]
     countsma1: Optional[int]
     timestamp: Optional[str] = None
-    atr24: Optional[float] = None

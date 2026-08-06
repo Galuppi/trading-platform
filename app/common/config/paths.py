@@ -6,10 +6,17 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[3]
 ROOT_WWW = Path(r"C:\inetpub\wwwroot")
 
+#data directory — one level above Apps\, shared across the whole app family
+#(trader instances, and later price-provider/signal-provider), so it's fully
+#decoupled from any single app's deploy folder and survives any app-only redeploy
+DATA_DIR = ROOT_DIR.parent.parent / "Data"
+
 #app directories and files
 APP_DIR = ROOT_DIR / "app"
 STRATEGY_PATH = APP_DIR / "strategies"
 STATE_PATH = APP_DIR / "runtime" / "state" / "state.json"
+DEALS_DB_PATH = DATA_DIR / "deals.db"
+HEARTBEAT_PATH = APP_DIR / "runtime" / "state" / "heartbeat.json"
 LOG_PATH = APP_DIR / "runtime" / "logs"
 HOLIDAY_PATH = APP_DIR / "common" / "config" / "holidays" / "holidays_{}.yaml"
 ACCOUNT_RISK_PATH = APP_DIR / "common" / "config" / "account_risk.yaml"

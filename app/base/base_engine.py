@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import json
 import logging
 from typing import List, Optional
 
@@ -10,7 +11,7 @@ from app.base.base_account import Account
 from app.base.base_connector import Connector
 from app.base.base_strategy import Strategy
 from app.common.config.constants import TRADE_STATUS_OPEN
-from app.common.config.paths import LOG_PATH
+from app.common.config.paths import LOG_PATH, HEARTBEAT_PATH
 from app.common.models.model_connector import ConnectorConfig
 from app.common.services.platform_time import PlatformTime
 from app.common.services.logger import setup_logger
@@ -21,6 +22,7 @@ from app.common.services.risk_manager import RiskManager
 from app.common.services.pushover_manager import PushoverManager
 from app.common.services.sync_manager import SyncManager
 from app.common.services.state_manager import StateManager
+from app.common.services.deal_archive_manager import DealArchiveManager
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,7 @@ class BaseEngine(ABC):
         notify_manager: PushoverManager,
         risk_manager: Optional[RiskManager] = None,
         sync_manager: Optional[SyncManager] = None,
+        deal_archive_manager: Optional[DealArchiveManager] = None,
     ) -> None:
         """Initialize the engine with a list of strategies and a state manager."""
         self.connector: Connector = connector
@@ -54,6 +57,7 @@ class BaseEngine(ABC):
         self.risk_manager: Optional[RiskManager] = risk_manager
         self.notify_manager: PushoverManager = notify_manager
         self.sync_manager: Optional[SyncManager] = sync_manager
+        self.deal_archive_manager: Optional[DealArchiveManager] = deal_archive_manager
         self.last_logged_event_ts: int = 0
 
     def initialize(self) -> None:
@@ -220,6 +224,37 @@ class BaseEngine(ABC):
                 logger.warning(f"Failed to refresh VIX: {error}")
             return timestamp
         return last_vix_refresh_update
+
+    def _write_heartbeat(self, timestamp: int) -> None:
+        """Write a small heartbeat file every loop iteration so an external watchdog can
+        detect a genuinely frozen process (e.g. a blocking call that never times out and
+        never raises) — something no amount of internal exception handling can catch,
+        since the loop itself has stopped running."""
+        try:
+            heartbeat = {
+                "timestamp": timestamp,
+                "platform": self.connector_config.type,
+                "account_id": self.connector_config.account_id or self.connector_config.login,
+                "environment": self.connector_config.environment,
+            }
+            HEARTBEAT_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(HEARTBEAT_PATH, "w", encoding="utf-8") as f:
+                json.dump(heartbeat, f, indent=4)
+        except Exception as error:
+            logger.warning(f"Failed to write heartbeat: {error}")
+
+    def _periodic_deal_archive(self, timestamp: int, last_deal_archive_update: int) -> int:
+        """Archive newly closed trades to the deal history database if 1 hour has elapsed since last update."""
+        if timestamp - last_deal_archive_update < 3600:
+            return last_deal_archive_update
+
+        try:
+            if self.deal_archive_manager:
+                self.deal_archive_manager.archive_closed_trades(self.state_manager.get_all_trades())
+        except Exception as error:
+            logger.warning(f"Failed to archive closed trades: {error}")
+
+        return timestamp
 
     @abstractmethod
     def run(self) -> None:

@@ -7,8 +7,6 @@ holiday_calendar: us
 strategy_id: 1006
 vix_pause_enabled: true
 vix_threshold: 20
-atr_gate_enabled: true
-atr_gate_multiplier: 1.0
 signal_feed: "C:\\Apps\\SignalProvider\\signals\\signals.json"
 
 market_hours:

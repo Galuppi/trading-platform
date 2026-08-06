@@ -16,6 +16,7 @@ class Engine(BaseEngine):
         last_balances_update = 0
         last_news_refresh_update = 0
         last_vix_refresh_update = 0
+        last_deal_archive_update = 0
 
         start_engine_timestamp =PlatformTime.timestamp()
         if self._update_and_check_profit_targets(start_engine_timestamp, 0) > 0:
@@ -34,33 +35,48 @@ class Engine(BaseEngine):
                 
                 current_timestamp = PlatformTime.timestamp()
 
-                last_tick_timestamp = self.state_manager.get_server_last_tick()
-                current_tick_timestamp = self.account.get_server_tick_timestamp()
+                try:
+                    last_tick_timestamp = self.state_manager.get_server_last_tick()
+                    current_tick_timestamp = self.account.get_server_tick_timestamp()
 
-                server_time_offset = None   
-                if last_tick_timestamp is not None and last_tick_timestamp != current_tick_timestamp:
-                    server_time_offset = self.account.get_server_offset_hours()
+                    server_time_offset = None
+                    if last_tick_timestamp is not None and last_tick_timestamp != current_tick_timestamp:
+                        server_time_offset = self.account.get_server_offset_hours()
 
-                if server_time_offset is not None:
-                    PlatformTime.set_offset(server_time_offset)
-                    self.state_manager.save_server_time_offset(server_time_offset)
-                
-                if server_time_offset is None and self.state_manager.get_server_time_offset() is not None:
-                    persisted_offset = self.state_manager.get_server_time_offset()
-                    PlatformTime.set_offset(persisted_offset)
+                    if server_time_offset is not None:
+                        PlatformTime.set_offset(server_time_offset)
+                        self.state_manager.save_server_time_offset(server_time_offset)
 
-                open_ticket_ids = self.account.get_open_tickets()
-                self.sync_manager.sync_status_with_broker(open_ticket_ids)
-                closed_tickets = self.account.get_closed_tickets()
-                self.sync_manager.sync_tickets_with_broker(closed_tickets)
-                self.state_manager.save_server_last_tick(current_tick_timestamp)
-                last_vix_refresh_update = self._periodic_vix_refresh(current_timestamp, last_vix_refresh_update)
-                last_news_refresh_update = self._periodic_news_calendar_refresh(current_timestamp, last_news_refresh_update)
-                last_balances_update = self._update_and_check_profit_targets(current_timestamp, last_balances_update)                                             
-                self.dashboard_manager.print_status_report(self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True)
+                    if server_time_offset is None and self.state_manager.get_server_time_offset() is not None:
+                        persisted_offset = self.state_manager.get_server_time_offset()
+                        PlatformTime.set_offset(persisted_offset)
 
-                self._run_strategies()
-              
+                    open_ticket_ids = self.account.get_open_tickets()
+                    self.sync_manager.sync_status_with_broker(open_ticket_ids)
+                    closed_tickets = self.account.get_closed_tickets()
+                    self.sync_manager.sync_tickets_with_broker(closed_tickets)
+                    self.state_manager.save_server_last_tick(current_tick_timestamp)
+                    last_vix_refresh_update = self._periodic_vix_refresh(current_timestamp, last_vix_refresh_update)
+                    last_news_refresh_update = self._periodic_news_calendar_refresh(current_timestamp, last_news_refresh_update)
+                    last_balances_update = self._update_and_check_profit_targets(current_timestamp, last_balances_update)
+                    last_deal_archive_update = self._periodic_deal_archive(current_timestamp, last_deal_archive_update)
+                    self.dashboard_manager.print_status_report(self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True)
+
+                    self._run_strategies()
+                    self._write_heartbeat(current_timestamp)
+                except Exception as error:
+                    # A broker/network call (e.g. reconcile()) can time out on a
+                    # connection that *looked* alive (connection_check() passed)
+                    # but was actually already dead — the real disconnect event
+                    # sometimes only arrives after the blocking call gives up.
+                    # Don't let that kill the whole engine: log it, skip this
+                    # iteration, and let connection_check() on the next loop
+                    # pass detect the (by then updated) disconnected state and
+                    # reconnect.
+                    logger.warning(f"Error during iteration, will retry next cycle: {error}", exc_info=True)
+                    PlatformTime.sleep(5)
+                    continue
+
                 PlatformTime.sleep(30)
         except KeyboardInterrupt:
             self.shutdown()
