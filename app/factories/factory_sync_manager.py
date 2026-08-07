@@ -7,6 +7,7 @@ from app.common.services.pushover_manager import PushoverManager
 
 logger = logging.getLogger(__name__)
 
+
 def get_sync_manager(
     state_manager: StateManager,
     notify_manager: PushoverManager,
@@ -16,5 +17,5 @@ def get_sync_manager(
         state_manager=state_manager,
         notify_manager=notify_manager,
     )
-    
+
     return manager

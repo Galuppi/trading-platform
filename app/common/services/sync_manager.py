@@ -11,6 +11,7 @@ from app.common.services.pushover_manager import PushoverManager
 
 class SyncManager:
     """Synchronizes local trade state with the broker's reported open/closed positions."""
+
     def __init__(
         self,
         state_manager: StateManager,
@@ -52,4 +53,8 @@ class SyncManager:
                 updated = True
             if updated:
                 self.state_manager.add_trade(trade)
-                self.notify_manager.send_notification(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}", "Close Trade (Broker Sync)")
+                self.notify_manager.send_notification(
+                    f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at "
+                    f"{trade.exit_price} Comment: {trade.comment}",
+                    "Close Trade (Broker Sync)",
+                )

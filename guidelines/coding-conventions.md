@@ -130,6 +130,21 @@ repeated identically across an interface and every implementation of it
 agrees with every other copy. Worth an occasional literal grep for
 suspicious tokens across the whole tree, not just diff review.
 
+**Names must be self-explanatory — a reader shouldn't need the
+implementation open to know what a variable holds.** `t`, `tmp`, `val`,
+`data` tell you nothing; `closed_trade`, `last_deal_archive_update`,
+`account_id` tell you everything without a comment. This is the single
+biggest lever against needing comments at all (see §13) — a well-named
+variable *is* the explanation.
+
+```python
+# Bad — needs a comment to be readable
+d = get_trades()  # d = closed deals from state
+
+# Good — no comment needed, the name carries the meaning
+closed_trades = get_trades()
+```
+
 ---
 
 ## 4. Type Hints
@@ -316,6 +331,97 @@ and is a good template for reviewing any future concept:
 
 ---
 
+## 13. Comments & Docstrings
+
+**Comments are a last resort, not a habit.** Prefer a better name, a smaller
+function, or an extracted variable over a comment explaining what code does.
+A comment is justified only when it explains something the code *can't*
+express on its own — a non-obvious "why", a gotcha learned the hard way, a
+constraint imposed by something external (a broker's API quirk, a platform
+limitation). If a comment would just restate the line below it, delete the
+comment.
+
+```python
+# Bad — restates what the code already says
+# increment retry count
+retry_count += 1
+
+# Good — explains something the code can't say on its own
+# Twisted's reactor can only be started once per process; a second
+# CTraderSession must reuse it, not call reactor.run() again.
+if not reactor.running:
+    reactor.run()
+```
+
+**Every function/method gets a docstring — exactly one line.** Not a
+paragraph, not an Args/Returns block. If one sentence can't capture what it
+does, the function is very likely doing too much and should be split.
+
+```python
+# Bad — a wall of text where a name change would've done more work
+def sync(self, tickets):
+    """
+    This function takes a list of ticket ids that are currently open
+    according to the broker and compares them against what we have
+    stored locally in state, then for any that are no longer open it
+    marks them closed and persists the change back to state...
+    """
+
+# Good — one line, and the params/return are self-evident from names + type hints
+def sync_status_with_broker(self, open_ticket_ids: List[str]) -> None:
+    """Marks any locally-open trade as closed if the broker no longer lists it as open."""
+```
+
+Module-level docstrings follow the same rule — one line at the top of the
+file (see any file in this codebase for the pattern already in use).
+
+---
+
+## 14. Data Directory, Deal Archiving & Heartbeat
+
+**`DATA_DIR`** (`app/common/config/paths.py`) points two levels above the
+per-instance app folder (`Apps\<Instance>\` → `Data\`), so it's shared by
+every instance in the app family (MT5, cTrader, and later
+`price-provider`/`signal-provider`) and untouched by an app-only redeploy.
+
+**The deals database filename is configurable, not hardcoded** — `DATABASE`
+in `.env` (default `deals.db` if unset), loaded via
+`load_database_config()` like every other setting (see §2). The resolved
+path (`DATA_DIR / database_config.filename`) is assembled once in `main.py`
+and passed into `get_deal_archive_manager(db_path=...)` — `paths.py` itself
+never reads the environment, per §2.
+
+**`DealArchiveManager`** (`app/common/services/deal_archive_manager.py`)
+archives every closed `TradeRecord` into that shared SQLite file, once an
+hour, via a `_periodic_deal_archive()` call in `base_engine.py` that follows
+the same `_periodic_X_refresh(timestamp, last_update)` pattern as the VIX
+and news refreshes. Two things make this safe for multiple instances
+writing to the same file:
+
+- **Primary key is `(platform, account_id, id)`, not just `id`** — MT5 and
+  cTrader have independent ticket-numbering, so a bare `id` risks a
+  same-number collision silently dropping a row via `INSERT OR IGNORE`.
+- **`SQLITE_BUSY_TIMEOUT_SECONDS = 30`** on every connection — gives SQLite
+  room to wait out a lock from a concurrent writer instead of immediately
+  raising `database is locked`.
+
+**Heartbeat** (`HEARTBEAT_PATH`, still under `app/runtime/state/` —
+instance-local, not shared, since it's rewritten every loop anyway) is
+written once per successful iteration, *after* `_run_strategies()`
+completes, so a fresh timestamp means real forward progress, not just "the
+process is technically alive". A genuine hang (a blocking call that never
+raises) leaves the file stale — that staleness is the signal a future
+external watchdog reads; nothing internal can detect that case, since the
+code that would report it has itself stopped running.
+
+**Crash notification**: any fatal exception out of `app.run()`, and a
+failed platform connection at startup, now send a Pushover alert via
+`notify_manager` before the process exits — replacing a previous
+`input("Press Enter to exit...")` that would hang forever unattended on a
+server with no console watching stdin.
+
+---
+
 ## Quick Checklist for Aligning Another Project
 
 - [ ] All `os.getenv()`/`os.environ` calls live only in `*/config/loaders/*.py`
@@ -323,6 +429,7 @@ and is a good template for reviewing any future concept:
 - [ ] `main.py`/`run.py` only calls loaders + factories, no inline env/config logic
 - [ ] No field name repeats its own container's name
 - [ ] No platform-specific vocabulary (broker field names, etc.) in shared models
+- [ ] Variable/field names are self-explanatory — no `tmp`/`val`/`data`/single letters
 - [ ] One `lock.py` with `is_already_running(lock_path, environment)` /
       `release_lock(lock_path)`, production-gated, environment passed in by caller
 - [ ] All factory functions named `get_<thing>`, one file per concern
@@ -332,3 +439,8 @@ and is a good template for reviewing any future concept:
 - [ ] Cheap in-memory reads are `@property`; I/O or parameterized reads are explicit methods
 - [ ] New fields on persisted dataclasses have defaults
 - [ ] Any rename touching persisted state has a migration plan before deploy
+- [ ] Comments only explain non-obvious "why", never restate what the code says
+- [ ] Every function/method has exactly a one-line docstring, no Args/Returns blocks
+- [ ] Shared paths (`DATA_DIR`) stay outside any single app's own deploy folder
+- [ ] SQLite files written by more than one process use a busy `timeout=` and a
+      primary key that can't collide across processes (e.g. `(platform, account_id, id)`)

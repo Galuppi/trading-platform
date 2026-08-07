@@ -13,7 +13,7 @@ from app.common.config.constants import (
     TIME_REFERENCE_SYMBOL,
     RETRY_COUNT,
     RETRY_DELAY_SECONDS,
-    )
+)
 from app.common.services.platform_time import PlatformTime
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class Mt5Account(Account):
     """MetaTrader 5 implementation of the Account interface."""
+
     def get_balance(self) -> float:
         account_info = self._safe_account_info()
         if account_info is None:
@@ -32,7 +33,7 @@ class Mt5Account(Account):
         if account_info is None:
             return 0.0
         return account_info.equity
-    
+
     def get_account_currency(self) -> str:
         account_info = self._safe_account_info()
         if account_info is None:
@@ -43,8 +44,8 @@ class Mt5Account(Account):
         return 0.0
 
     def get_slippage_per_lot(self) -> float:
-        return 0.0  
-    
+        return 0.0
+
     def get_commission(self, ticket: str) -> float:
         lookback_hours = 24 * 7
         now = PlatformTime.now()
@@ -78,7 +79,6 @@ class Mt5Account(Account):
             raise ValueError(f"Failed to calculate margin for {order.symbol}")
         return result
 
-
     def has_sufficient_margin(self, order: OrderRequest) -> bool:
         try:
             margin_required = self.get_margin_required(order)
@@ -95,7 +95,7 @@ class Mt5Account(Account):
         if account_info is None:
             return 0.0
         return account_info.login
-    
+
     def get_open_tickets(self) -> List[str]:
         positions = mt5.positions_get()
         if positions is None:
@@ -103,59 +103,59 @@ class Mt5Account(Account):
         return [str(pos.ticket) for pos in positions]
 
     def get_closed_tickets(self, lookback_hours: int = 24) -> List[TradeRecord]:
-            now = PlatformTime.now()
-            start = now - PlatformTime.timedelta(hours=lookback_hours)
-            end = now + PlatformTime.timedelta(hours=lookback_hours)
+        now = PlatformTime.now()
+        start = now - PlatformTime.timedelta(hours=lookback_hours)
+        end = now + PlatformTime.timedelta(hours=lookback_hours)
 
-            _ = mt5.history_orders_get(start, end)
-            deals = mt5.history_deals_get(start, end)
-            if not deals:
-                return []
+        _ = mt5.history_orders_get(start, end)
+        deals = mt5.history_deals_get(start, end)
+        if not deals:
+            return []
 
-            closed_tickets = []
-            for d in deals:
-                deal = d._asdict()
+        closed_tickets = []
+        for d in deals:
+            deal = d._asdict()
 
-                if (
-                    not deal.get("symbol")
-                    or float(deal.get("volume", 0)) <= 0
-                    or deal.get("entry") != mt5.DEAL_ENTRY_OUT
-                ):
-                    continue
+            if (
+                not deal.get("symbol")
+                or float(deal.get("volume", 0)) <= 0
+                or deal.get("entry") != mt5.DEAL_ENTRY_OUT
+            ):
+                continue
 
-                if deal.get("entry") != mt5.DEAL_ENTRY_OUT:
-                    continue
+            if deal.get("entry") != mt5.DEAL_ENTRY_OUT:
+                continue
 
-                trade = TradeRecord(
-                    id=str(deal["position_id"]),
-                    symbol=deal["symbol"],
-                    lot_size=float(deal["volume"]),
-                    type="buy" if deal["type"] in (mt5.DEAL_TYPE_BUY, mt5.ORDER_TYPE_BUY) else "sell",
-                    ticket=str(deal["position_id"]),
-                    status=TRADE_STATUS_CLOSED,
-                    timestamp=PlatformTime.datetime_str(),
-                    strategy="external",
-                    entry_price=None,
-                    exit_price=float(deal.get("price", 0.0)),
-                    exit_time=PlatformTime.from_timestamp(deal["time"]).strftime(DATETIME_FORMAT),
-                    stop_loss=None,
-                    stop_loss_points=None,
-                    take_profit=None,
-                    commission=float(deal.get("commission", 0.0)),
-                    comment=str(deal.get("comment", "")),
-                    profit=float(deal.get("profit", 0.0)),
-                    slippage_entry=None,
-                )
+            trade = TradeRecord(
+                id=str(deal["position_id"]),
+                symbol=deal["symbol"],
+                lot_size=float(deal["volume"]),
+                type="buy" if deal["type"] in (mt5.DEAL_TYPE_BUY, mt5.ORDER_TYPE_BUY) else "sell",
+                ticket=str(deal["position_id"]),
+                status=TRADE_STATUS_CLOSED,
+                timestamp=PlatformTime.datetime_str(),
+                strategy="external",
+                entry_price=None,
+                exit_price=float(deal.get("price", 0.0)),
+                exit_time=PlatformTime.from_timestamp(deal["time"]).strftime(DATETIME_FORMAT),
+                stop_loss=None,
+                stop_loss_points=None,
+                take_profit=None,
+                commission=float(deal.get("commission", 0.0)),
+                comment=str(deal.get("comment", "")),
+                profit=float(deal.get("profit", 0.0)),
+                slippage_entry=None,
+            )
 
-                closed_tickets.append(trade)
+            closed_tickets.append(trade)
 
-            return closed_tickets
-    
+        return closed_tickets
+
     def get_server_offset_hours(self) -> Optional[int]:
-        tick = mt5.symbol_info_tick(TIME_REFERENCE_SYMBOL)   
+        tick = mt5.symbol_info_tick(TIME_REFERENCE_SYMBOL)
         if not tick:
             return None
-        
+
         broker_time = PlatformTime.from_timestamp(tick.time, is_utc=True)
 
         utc_now = PlatformTime.local_now_utc()
@@ -164,7 +164,7 @@ class Mt5Account(Account):
         offset_int = int(round(offset_hours))
 
         return offset_int
-    
+
     def _safe_account_info(self) -> Optional[Any]:
         for attempt in range(1, RETRY_COUNT + 1):
             info = mt5.account_info()
@@ -178,14 +178,14 @@ class Mt5Account(Account):
         return None
 
     def get_server_tick_timestamp(self) -> Optional[int]:
-        tick = mt5.symbol_info_tick(TIME_REFERENCE_SYMBOL)   
+        tick = mt5.symbol_info_tick(TIME_REFERENCE_SYMBOL)
         if not tick:
             return None
-        
+
         return tick.time
-    
+
     def set_balance(self, new_balance: float) -> None:
-       pass
+        pass
 
     def set_equity(self, new_equity: float) -> None:
         pass

@@ -26,7 +26,8 @@ class DashboardManager:
         <title>Trading System Status</title>
         <meta http-equiv="refresh" content="10">
         <style>
-            body {{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#1e1e1e;color:#e0e0e0;margin:0;padding:20px;}}
+            body {{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#1e1e1e;
+                color:#e0e0e0;margin:0;padding:20px;}}
             .container {{max-width:1000px;margin:0 auto;}}
             h1 {{color:#4CAF50;text-align:center;margin-bottom:10px;}}
             .meta {{text-align:center;color:#aaa;font-size:0.9em;margin-bottom:20px;}}
@@ -57,7 +58,8 @@ class DashboardManager:
     <body>
         <div class="container">
             <h1>Trading System Status</h1>
-            <div class="meta">Environment: {mode} • {date} • Local: {local_time} • Platform: {platform_time} • UTC: {utc_time}</div>
+            <div class="meta">Environment: {mode} • {date} • Local: {local_time} •
+                Platform: {platform_time} • UTC: {utc_time}</div>
             {balances_html}
             <div class="section">
                 <h3>Strategies</h3>
@@ -115,7 +117,8 @@ class DashboardManager:
                 <div><span class="label">Strategy:</span> {strategy_name}</div>
                 <div><span class="label">Assets:</span> {asset_list}</div>
                 <div><span class="label">Open Trades:</span> {open_trades}</div>
-                <div><span class="label">Market open:</span> <span class="{market_class}">{'Yes' if is_market_open else 'No'}</span></div>
+                <div><span class="label">Market open:</span>
+                    <span class="{market_class}">{'Yes' if is_market_open else 'No'}</span></div>
                 <div><span class="label">Holiday:</span> {'Yes' if is_holiday else 'No'}</div>
                 {vix_line}
             </div>"""

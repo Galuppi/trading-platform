@@ -47,9 +47,14 @@ INSERT OR IGNORE INTO deals (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
+# seconds SQLite waits for a lock to clear before raising "database is locked" —
+# relevant now that multiple instances (MT5, cTrader) can write to the same shared file
+SQLITE_BUSY_TIMEOUT_SECONDS = 30
+
 
 class DealArchiveManager:
     """Archives closed trades into a local SQLite database for downstream reporting (e.g. Metabase)."""
+
     def __init__(self, db_path: Path, platform: str, account_id: str) -> None:
         self.db_path = db_path
         self.platform = platform
@@ -58,7 +63,7 @@ class DealArchiveManager:
         self._init_schema()
 
     def _init_schema(self) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=SQLITE_BUSY_TIMEOUT_SECONDS) as conn:
             conn.execute(CREATE_TABLE_SQL)
 
     def archive_closed_trades(self, trades: List[TradeRecord]) -> int:
@@ -68,7 +73,7 @@ class DealArchiveManager:
             return 0
 
         inserted = 0
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=SQLITE_BUSY_TIMEOUT_SECONDS) as conn:
             for trade in closed_trades:
                 cursor = conn.execute(
                     INSERT_DEAL_SQL,

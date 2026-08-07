@@ -4,6 +4,7 @@ import logging
 from app.common.services.platform_time import PlatformTime
 from pathlib import Path
 
+
 def setup_logger(log_path: Path, environment: str, log_level: str = "INFO") -> logging.Logger:
     """Initialize and configure the application logger."""
     root_logger = logging.getLogger()

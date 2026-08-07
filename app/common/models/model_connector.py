@@ -20,4 +20,3 @@ class ConnectorConfig:
     client_id: Optional[str]
     client_secret: Optional[str]
     refresh_token: Optional[str]
-    

@@ -13,8 +13,10 @@ from app.common.config.constants import TRADE_DIRECTION_BUY, TRADE_DIRECTION_SEL
 
 logger = logging.getLogger(__name__)
 
+
 class Calculator():
     """Pure trade math: position sizing, stop loss, profit, and capital allocation."""
+
     def __init__(
         self,
         symbol: Symbol,
@@ -23,7 +25,7 @@ class Calculator():
         self.symbol = symbol
         self.account = account
         self.commission_per_lot = self.account.get_commission_per_lot()
-        self.slippage_per_lot = self.account.get_slippage_per_lot() 
+        self.slippage_per_lot = self.account.get_slippage_per_lot()
 
     def calculate_lot_size_by_capital(self, order: OrderRequest) -> float:
         ask_price = self.symbol.get_ask_price(order.symbol)
@@ -43,7 +45,7 @@ class Calculator():
 
         return capped_lot
 
-    def calculate_lot_size_by_risk( self, order: OrderRequest, stop_loss_points: int) -> float:
+    def calculate_lot_size_by_risk(self, order: OrderRequest, stop_loss_points: int) -> float:
         if stop_loss_points <= 0:
             return 0.0
 
@@ -62,7 +64,7 @@ class Calculator():
         if price <= 0:
             return 0.0
 
-        risk_amount = order.capital * (order.risk_percent / 100)  
+        risk_amount = order.capital * (order.risk_percent / 100)
         loss_per_lot = stop_loss_points * tick_value
 
         if loss_per_lot <= 0:
@@ -220,57 +222,57 @@ class Calculator():
         return round(value, digits)
 
     def calculate_profit(
-            self,
-            trade: TradeRecord,
-            realized: bool,
-        ) -> ProfitResult:
-            """Calculate realized or floating profit for a trade based on status or explicit realized flag."""
-            if realized is None:
-                is_realized = (
-                    trade.status == TRADE_STATUS_CLOSED
-                    or trade.exit_price is not None
-                )
-            else:
-                is_realized = realized
-
-            if is_realized:
-                if trade.exit_price is None or trade.entry_price is None:
-                    raise ValueError(f"Missing entry or exit price for realized profit on trade {trade.ticket}")
-                price_diff = trade.exit_price - trade.entry_price
-                current_price = trade.exit_price
-            else:
-                if trade.entry_price is None:
-                    raise ValueError(f"Missing entry price for floating profit on trade {trade.ticket}")
-                try:
-                    current_price = (
-                        self.symbol.get_bid_price(trade.symbol)
-                        if trade.type.lower() == TRADE_DIRECTION_BUY
-                        else self.symbol.get_ask_price(trade.symbol)
-                    )
-                except Exception:
-                    raise ValueError(f"Could not get current price for symbol {trade.symbol}")
-                price_diff = current_price - trade.entry_price
-
-            if trade.type.lower() == TRADE_DIRECTION_SELL:
-                price_diff = -price_diff
-
-            tick_size = float(self.symbol.get_tick_size(trade.symbol)) or 0.0
-            tick_value = float(self.symbol.get_tick_value(trade.symbol)) or 0.0
-
-            if tick_size > 0 and tick_value > 0:
-                ticks_moved = price_diff / tick_size
-                gross_profit = ticks_moved * tick_value * trade.lot_size
-            else:
-                contract_size = float(self.symbol.get_contract_size(trade.symbol)) or 1.0
-                gross_profit = price_diff * trade.lot_size * contract_size
-
-            commission = (self.commission_per_lot or 0.0) * trade.lot_size
-            slippage_entry = ((self.slippage_per_lot or 0.0) * trade.lot_size * 0.5)
-            slippage_exit = ((self.slippage_per_lot or 0.0) * trade.lot_size * 0.5)
-
-            return ProfitResult(
-                profit=round(gross_profit, 2),
-                commission=round(commission, 2),
-                slippage_entry=round(slippage_entry, 2),
-                slippage_exit=round(slippage_exit, 2),
+        self,
+        trade: TradeRecord,
+        realized: bool,
+    ) -> ProfitResult:
+        """Calculate realized or floating profit for a trade based on status or explicit realized flag."""
+        if realized is None:
+            is_realized = (
+                trade.status == TRADE_STATUS_CLOSED
+                or trade.exit_price is not None
             )
+        else:
+            is_realized = realized
+
+        if is_realized:
+            if trade.exit_price is None or trade.entry_price is None:
+                raise ValueError(f"Missing entry or exit price for realized profit on trade {trade.ticket}")
+            price_diff = trade.exit_price - trade.entry_price
+            current_price = trade.exit_price
+        else:
+            if trade.entry_price is None:
+                raise ValueError(f"Missing entry price for floating profit on trade {trade.ticket}")
+            try:
+                current_price = (
+                    self.symbol.get_bid_price(trade.symbol)
+                    if trade.type.lower() == TRADE_DIRECTION_BUY
+                    else self.symbol.get_ask_price(trade.symbol)
+                )
+            except Exception:
+                raise ValueError(f"Could not get current price for symbol {trade.symbol}")
+            price_diff = current_price - trade.entry_price
+
+        if trade.type.lower() == TRADE_DIRECTION_SELL:
+            price_diff = -price_diff
+
+        tick_size = float(self.symbol.get_tick_size(trade.symbol)) or 0.0
+        tick_value = float(self.symbol.get_tick_value(trade.symbol)) or 0.0
+
+        if tick_size > 0 and tick_value > 0:
+            ticks_moved = price_diff / tick_size
+            gross_profit = ticks_moved * tick_value * trade.lot_size
+        else:
+            contract_size = float(self.symbol.get_contract_size(trade.symbol)) or 1.0
+            gross_profit = price_diff * trade.lot_size * contract_size
+
+        commission = (self.commission_per_lot or 0.0) * trade.lot_size
+        slippage_entry = ((self.slippage_per_lot or 0.0) * trade.lot_size * 0.5)
+        slippage_exit = ((self.slippage_per_lot or 0.0) * trade.lot_size * 0.5)
+
+        return ProfitResult(
+            profit=round(gross_profit, 2),
+            commission=round(commission, 2),
+            slippage_entry=round(slippage_entry, 2),
+            slippage_exit=round(slippage_exit, 2),
+        )

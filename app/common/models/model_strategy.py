@@ -85,6 +85,7 @@ class StrategyConfig:
             assets=assets
         )
 
+
 @dataclass
 class Signal:
     """A computed entry/exit signal for a symbol."""

@@ -1,7 +1,7 @@
 # trader
 
-A live, multi-strategy, multi-asset, multi-platform trading application. Currently trades on
-**MetaTrader 5**; a **cTrader** connector is scaffolded and ready for implementation.
+A live, multi-strategy, multi-asset, multi-platform trading application. Trades on both
+**MetaTrader 5** and **cTrader** — both connectors are fully implemented and live.
 
 ---
 
@@ -49,11 +49,29 @@ are scoped by strategy name specifically to keep them from stepping on each othe
 | Platform | Status |
 |---|---|
 | MetaTrader 5 | Implemented — live trading via the `MetaTrader5` package, requires the MT5 terminal running and logged in |
-| cTrader | Scaffolded (`app/connectors/ctrader/`) — classes and method signatures are in place, bodies are `NotImplementedError`/`TODO` |
+| cTrader | Implemented — live trading via the cTrader Open API (`ctrader-open-api`), OAuth-based, no terminal required |
 
 Adding a platform means implementing `Account`, `Connector`, `Symbol`, and `Trade` (see
 `app/base/`) and registering it in `app/factories/factory_platform.py`. Nothing else in the
 app needs to change — strategies, the engine, and state persistence are all platform-agnostic.
+
+### cTrader OAuth setup
+
+cTrader authenticates via OAuth rather than a login/password, so getting a `CTRADER_REFRESH_TOKEN`
+into `.env` is a one-time browser step rather than just typing in credentials:
+
+```bash
+scripts\run_ctrader_oauth_setup.bat
+```
+
+This starts a small local web server, opens your browser to the cTrader consent page, and once
+you approve, exchanges the resulting code for tokens itself — `CTRADER_CLIENT_SECRET` never
+touches the browser. The result page shows the refresh token (with a copy button) and your
+linked accounts side by side, so you can match the account number shown in the cTrader UI to
+the `ctidTraderAccountId` that `CTRADER_ACCOUNT_ID` actually expects — nothing is written to
+`.env` automatically, copy it over yourself. One-time prerequisite: register
+`http://localhost:5069/oauth_callback.html` as a redirect URI on
+[connect.spotware.com/apps](https://connect.spotware.com/apps).
 
 ---
 
@@ -70,6 +88,8 @@ grouped by what they actually configure, not lumped under one generic prefix:
   `CTRADER_CLIENT_SECRET`, `CTRADER_REFRESH_TOKEN`, `CTRADER_API_KEY`
 - **`NOTIFY_*`** — Pushover notification settings: `NOTIFY_SERVER_URL`, `NOTIFY_APP_TOKEN`,
   `NOTIFY_USER_KEY`
+- **`DATABASE`** — filename of the shared deals database (default `deals.db` if unset), resolved
+  against `DATA_DIR` — see "Deal archiving, heartbeat & crash alerts" below
 - **`LOG_LEVEL`** — `DEBUG` / `INFO` / `WARNING` / `ERROR` / `CRITICAL`
 
 `PLATFORM_ENVIRONMENT` also gates the single-instance lock file: the app only refuses to start
@@ -106,6 +126,26 @@ connect independently.
 
 ---
 
+## Deal archiving, heartbeat & crash alerts
+
+**Deal archiving** — every closed trade is written to a shared SQLite database once an hour, so
+per-strategy/per-symbol performance can be queried or visualized (e.g. in Metabase) without
+depending on state that gets pruned after 24h. The database lives in `DATA_DIR`
+(`Apps\..\Data\`, two levels above the per-instance app folder), so it's shared by every
+instance in the app family and untouched by an app-only redeploy — MT5 and cTrader running in
+parallel write into the same file safely (see `DealArchiveManager` for the collision-safety
+details).
+
+**Heartbeat** — `app/runtime/state/heartbeat.json` is rewritten once per successful loop
+iteration. A stale timestamp (no external watchdog reads this yet — that's a planned addition)
+means the process has genuinely frozen, as opposed to hit a handled, logged error.
+
+**Crash alerts** — a failed platform connection at startup, or any unhandled exception during
+the run loop, sends a Pushover notification before the process exits, instead of hanging
+indefinitely on an unattended console.
+
+---
+
 ## Project layout
 
 ```
@@ -113,25 +153,25 @@ app/
   base/         abstract interfaces: Account, Connector, Symbol, Trade, Strategy, BaseEngine
   common/
     config/     constants, paths, env loaders
-    models/     dataclasses: ConnectorConfig, TradeRecord, StrategyConfig, etc.
+    models/     dataclasses: ConnectorConfig, TradeRecord, StrategyConfig, DatabaseConfig, etc.
     services/   Calculator, StateManager, DashboardManager, NewsManager, RiskManager,
-                SyncManager, PlatformTime, PushoverManager
+                SyncManager, DealArchiveManager, PlatformTime, PushoverManager
   connectors/
     mt5/        MetaTrader 5 implementation (live)
-    ctrader/    cTrader implementation (scaffold)
+    ctrader/    cTrader implementation (live)
   factories/    wiring — builds concrete instances from config, no business logic
   runtime/      main.py (entry point) and engine.py (the run loop)
   strategies/   one folder per strategy, each with strategy.py + config.yaml
 startup/        .bat scripts for dev/prod runs and deployment
-tests/          pytest scaffold
+scripts/        one-off diagnostics and the cTrader OAuth setup helper
 ```
 
 ---
 
 ## Status
 
-- ✅ MT5 live connector, fully wired
-- ✅ Six strategies running against MT5
+- ✅ MT5 and cTrader live connectors, fully wired
+- ✅ Six strategies running against both platforms
+- ✅ Deal archiving, heartbeat, and crash alerting in place
 - ✅ Type hints and docstrings complete across the codebase
-- 🚧 cTrader connector — scaffolded, `connect()`/`connection_check()` not yet implemented
-- 🔜 Advanced risk manager, web-based monitoring dashboard
+- 🔜 Advanced risk manager, web-based monitoring dashboard, external heartbeat watchdog

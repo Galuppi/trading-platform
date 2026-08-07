@@ -7,18 +7,22 @@ from app.base.base_engine import BaseEngine
 
 logger = logging.getLogger(__name__)
 
+
 class Engine(BaseEngine):
     """Live trading runtime loop: connects, runs strategies, and reports status."""
+
     def run(self) -> None:
         self.initialize()
         PlatformTime.sleep(1)
-        self.dashboard_manager.print_status_report(self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True)
+        self.dashboard_manager.print_status_report(
+            self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True
+        )
         last_balances_update = 0
         last_news_refresh_update = 0
         last_vix_refresh_update = 0
         last_deal_archive_update = 0
 
-        start_engine_timestamp =PlatformTime.timestamp()
+        start_engine_timestamp = PlatformTime.timestamp()
         if self._update_and_check_profit_targets(start_engine_timestamp, 0) > 0:
             logger.info("Initial balances set.")
 
@@ -32,7 +36,7 @@ class Engine(BaseEngine):
                         logger.error("Reconnection failed. Retrying in 30 seconds...")
                         PlatformTime.sleep(30)
                         continue
-                
+
                 current_timestamp = PlatformTime.timestamp()
 
                 try:
@@ -57,22 +61,24 @@ class Engine(BaseEngine):
                     self.sync_manager.sync_tickets_with_broker(closed_tickets)
                     self.state_manager.save_server_last_tick(current_tick_timestamp)
                     last_vix_refresh_update = self._periodic_vix_refresh(current_timestamp, last_vix_refresh_update)
-                    last_news_refresh_update = self._periodic_news_calendar_refresh(current_timestamp, last_news_refresh_update)
-                    last_balances_update = self._update_and_check_profit_targets(current_timestamp, last_balances_update)
-                    last_deal_archive_update = self._periodic_deal_archive(current_timestamp, last_deal_archive_update)
-                    self.dashboard_manager.print_status_report(self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True)
+                    last_news_refresh_update = self._periodic_news_calendar_refresh(
+                        current_timestamp, last_news_refresh_update
+                    )
+                    last_balances_update = self._update_and_check_profit_targets(
+                        current_timestamp, last_balances_update
+                    )
+                    last_deal_archive_update = self._periodic_deal_archive(
+                        current_timestamp, last_deal_archive_update
+                    )
+                    self.dashboard_manager.print_status_report(
+                        self.strategies, self.state_manager, self.connector_config.environment, log_to_terminal=True
+                    )
 
                     self._run_strategies()
                     self._write_heartbeat(current_timestamp)
                 except Exception as error:
-                    # A broker/network call (e.g. reconcile()) can time out on a
-                    # connection that *looked* alive (connection_check() passed)
-                    # but was actually already dead — the real disconnect event
-                    # sometimes only arrives after the blocking call gives up.
-                    # Don't let that kill the whole engine: log it, skip this
-                    # iteration, and let connection_check() on the next loop
-                    # pass detect the (by then updated) disconnected state and
-                    # reconnect.
+                    # A broker call can time out on a connection that looked alive but was
+                    # already dead — skip this iteration, next connection_check() catches it.
                     logger.warning(f"Error during iteration, will retry next cycle: {error}", exc_info=True)
                     PlatformTime.sleep(5)
                     continue

@@ -3,7 +3,8 @@
 import yaml
 
 from pathlib import Path
-from app.common.config.paths import HOLIDAY_PATH    
+from app.common.config.paths import HOLIDAY_PATH
+
 
 def load_holiday_calendar(region: str) -> list[str]:
     path = Path(str(HOLIDAY_PATH).format(region.lower()))

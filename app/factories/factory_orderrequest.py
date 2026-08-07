@@ -18,7 +18,7 @@ def get_order_request(
     strategy_display_name: str,
     cached_range: Optional[Range] = None,
 ) -> OrderRequest:
-    
+
     allocated_capital = calculator.calculate_allocated_capital(config, asset)
 
     order = OrderRequest(

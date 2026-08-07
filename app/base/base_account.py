@@ -16,7 +16,7 @@ class Account(ABC):
     def set_balance(self, new_balance: float) -> None:
         """Set the account balance to a new value."""
         pass
-    
+
     @abstractmethod
     def set_equity(self, new_equity: float) -> None:
         """Set the account equity to a new value."""
@@ -71,7 +71,7 @@ class Account(ABC):
     def get_closed_tickets(self) -> List[TradeRecord]:
         """Return list of recently closed tickets as TradeRecords from broker history."""
         pass
-  
+
     @abstractmethod
     def get_server_offset_hours(self) -> Optional[float]:
         """Return broker server time offset from internal platform time (in hours)."""

@@ -9,8 +9,10 @@ from app.common.services.platform_time import PlatformTime
 
 logger = logging.getLogger(__name__)
 
+
 class PushoverManager:
     """Sends throttled push notifications via the Pushover API."""
+
     def __init__(
         self,
         app_token: str,

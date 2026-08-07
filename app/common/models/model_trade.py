@@ -3,12 +3,14 @@
 from dataclasses import dataclass
 from typing import Optional
 
+
 @dataclass
 class TradeInput:
     """Input parameters for evaluating a potential trade."""
     symbol: str
     capital: float
     risk_percent: float = 1.0
+
 
 @dataclass
 class TradeResult:
@@ -25,6 +27,7 @@ class TradeResult:
     comment: Optional[str] = ""
     request: Optional[dict] = None
     price: Optional[float] = None
+
 
 @dataclass
 class TradeRecord:
@@ -50,6 +53,7 @@ class TradeRecord:
     slippage_entry: Optional[float] = None
     slippage_exit: Optional[float] = None
 
+
 @dataclass
 class OrderResult:
     """Result of submitting an order to the broker."""
@@ -64,6 +68,7 @@ class OrderResult:
     price: Optional[float] = None
     slippage_entry: Optional[float] = None
     slippage_exit: Optional[float] = None
+
 
 @dataclass
 class OrderRequest:
@@ -81,6 +86,7 @@ class OrderRequest:
     price: Optional[float] = None
     strategy_name: Optional[str] = ""
     strategy_id: Optional[int] = 0
+
 
 @dataclass
 class ProfitResult:

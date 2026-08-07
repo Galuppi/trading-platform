@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+
 @dataclass
 class BalanceInfo:
     """Snapshot of account balance and profit at a point in time."""
@@ -9,11 +10,13 @@ class BalanceInfo:
     balance: float
     free_margin: float
 
+
 @dataclass
 class MarginInfo:
     """Snapshot of account margin usage and free margin."""
     required_margin: float
     has_sufficient: bool
+
 
 @dataclass
 class AccountSnapshot:
@@ -28,6 +31,7 @@ class AccountSnapshot:
     target_reached: bool = False
     break_even_reached: bool = False
     weekly_profit_reached: bool = False
+
 
 @dataclass
 class AccountRisk:

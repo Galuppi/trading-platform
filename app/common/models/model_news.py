@@ -7,6 +7,7 @@ from typing import Literal, Optional
 
 ImpactLevel = Literal["Low", "Medium", "High", "Holiday"]
 
+
 @dataclass(frozen=True, slots=True)
 class FaireconomyEvent:
     """A single economic calendar event."""

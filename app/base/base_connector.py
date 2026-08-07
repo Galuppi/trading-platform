@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 
+
 class Connector(ABC):
     """Abstract interface for connecting to and checking the status of a trading platform session."""
     @abstractmethod

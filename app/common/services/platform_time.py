@@ -13,9 +13,11 @@ from app.common.config.constants import (
 )
 from app.common.models.model_strategy import MarketSession
 
+
 @lru_cache(maxsize=100_000)
 def _cached_strptime(value: str, fmt: str) -> datetime:
     return datetime.strptime(value, fmt)
+
 
 class PlatformTime:
     """Centralized, timezone-aware time utility used throughout the application."""
@@ -24,11 +26,11 @@ class PlatformTime:
 
     @staticmethod
     def set_timezone(tz_name: str) -> None:
-        PlatformTime._platform_tz = ZoneInfo(tz_name or "UTC")    
-    
+        PlatformTime._platform_tz = ZoneInfo(tz_name or "UTC")
+
     @staticmethod
     def set_offset(tz_offset: int) -> None:
-        PlatformTime._offset = tz_offset 
+        PlatformTime._offset = tz_offset
 
     @staticmethod
     def get_offset() -> float:
@@ -98,7 +100,7 @@ class PlatformTime:
     @staticmethod
     def local_now() -> datetime:
         return datetime.now()
-    
+
     @staticmethod
     def local_now_utc() -> datetime:
         return datetime.now(tz=timezone.utc)
@@ -119,7 +121,7 @@ class PlatformTime:
     @staticmethod
     def min_datetime() -> datetime:
         return datetime.min.replace(tzinfo=PlatformTime._platform_tz)
-   
+
     @staticmethod
     def strptime(value: str, fmt: str) -> datetime:
         return _cached_strptime(value, fmt).replace(tzinfo=PlatformTime._platform_tz)
@@ -158,13 +160,13 @@ class PlatformTime:
     def is_within_weekday_range(open_day: int, close_day: int) -> bool:
         current = PlatformTime.now().weekday()
         start = open_day - 1
-        end   = close_day - 1
+        end = close_day - 1
 
         if start <= end:
             return start <= current <= end
         else:
             return current >= start or current <= end
- 
+
     @staticmethod
     def is_within_market_hours(day: str, sessions: Dict[str, MarketSession]) -> bool:
         if day not in sessions:

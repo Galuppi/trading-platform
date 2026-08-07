@@ -7,6 +7,7 @@ from app.common.config.paths import STATE_PATH
 
 logger = logging.getLogger(__name__)
 
+
 def get_state_manager(account: Account) -> StateManager:
     logger.info(f"Initializing StateManager at: {STATE_PATH}")
 

@@ -9,12 +9,13 @@ from app.factories.factory_calculator import get_calculator
 
 load_dotenv()
 
-from app.common.config.paths import STATE_PATH, LOG_PATH, LOCK_FILE_PATH
+from app.common.config.paths import STATE_PATH, LOG_PATH, LOCK_FILE_PATH, DATA_DIR
 from app.common.services.logger import setup_logger
 from app.common.services.lock import is_already_running, release_lock
 from app.common.config.loaders.loader_connector_config import load_connector_config
 from app.common.config.loaders.loader_notify_config import load_notify_config
 from app.common.config.loaders.loader_log_config import load_log_level
+from app.common.config.loaders.loader_database_config import load_database_config
 from app.factories.factory_platform import (
     get_connector,
     get_account,
@@ -44,12 +45,15 @@ if __name__ == "__main__":
         sys.exit(1)
 
     notify_config = load_notify_config()
+    database_config = load_database_config()
     log_level = load_log_level()
 
     platform_name = (connector_config.type or "").lower()
 
     setup_logger(LOG_PATH, connector_config.environment, log_level)
-    logger.info(f"Environment: {connector_config.environment} | Platform: {platform_name} | Server: {connector_config.server}")
+    logger.info(
+        f"Environment: {connector_config.environment} | Platform: {platform_name} | Server: {connector_config.server}"
+    )
     logger.info(f"Using state file: {STATE_PATH}")
 
     PlatformTime.set_timezone(connector_config.timezone or "UTC")
@@ -67,6 +71,7 @@ if __name__ == "__main__":
     trade = get_trade(platform_name, symbol, calculator)
     sync_manager = get_sync_manager(state_manager, notify_manager)
     deal_archive_manager = get_deal_archive_manager(
+        db_path=DATA_DIR / database_config.filename,
         platform=platform_name,
         account_id=str(connector_config.account_id or connector_config.login or "unknown"),
     )
@@ -75,7 +80,8 @@ if __name__ == "__main__":
     if not connector.connect():
         logger.error("Failed to connect to trading platform.")
         notify_manager.send_notification(
-            f"{connector_config.environment}/{platform_name}: failed to connect to trading platform (account #{connector_config.login}, server {connector_config.server}).",
+            f"{connector_config.environment}/{platform_name}: failed to connect to trading platform "
+            f"(account #{connector_config.login}, server {connector_config.server}).",
             "Trader App Down",
             1,
         )
@@ -119,7 +125,8 @@ if __name__ == "__main__":
     except Exception as e:
         logger.exception(f"Fatal error: {e}")
         notify_manager.send_notification(
-            f"{connector_config.environment}/{platform_name}: engine crashed and stopped ({e}). No trading is happening until it's restarted.",
+            f"{connector_config.environment}/{platform_name}: engine crashed and stopped ({e}). "
+            f"No trading is happening until it's restarted.",
             "Trader App Down",
             1,
         )

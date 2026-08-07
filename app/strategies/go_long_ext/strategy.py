@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class GoLongExtStrategy(Strategy):
     """Extended long-only strategy with a defined opening range and entry window."""
+
     def __init__(self, config: StrategyConfig):
         super().__init__(config=config)
         self.range_by_symbol: dict[str, Range] = {}
@@ -63,7 +64,7 @@ class GoLongExtStrategy(Strategy):
                 range_.high = hist_range.high
                 range_.low = hist_range.low
                 range_.range_set = True
-                
+
             except Exception as e:
                 logger.warning(
                     f"[{self.strategy_name}] Failed to calculate range for {asset.symbol}: {e}"
@@ -75,7 +76,7 @@ class GoLongExtStrategy(Strategy):
 
         if self.state_manager.get_weekly_profit_reached():
             return None
-               
+
         if self.has_reached_max_trades(asset):
             return None
 
@@ -95,7 +96,7 @@ class GoLongExtStrategy(Strategy):
             range_size_monetary = range_.high - range_.low
             min_allowed_range = 0.001 * price
             max_allowed_range = 0.008 * price
-            
+
             if not (min_allowed_range <= range_size_monetary <= max_allowed_range):
                 return None
 
@@ -108,12 +109,11 @@ class GoLongExtStrategy(Strategy):
     def is_exit_signal(self, trade: TradeRecord, asset_config: AssetConfig) -> bool:
         if self.state_manager.get_target_reached():
             return True
-        
+
         if self.state_manager.get_weekly_profit_reached():
             return True
-        
+
         if trade.strategy != self.strategy_name:
             return False
 
         return PlatformTime.minutes_since_midnight() >= (asset_config.close_min or 0)
-    

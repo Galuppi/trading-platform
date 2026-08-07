@@ -15,8 +15,10 @@ from app.common.config.constants import (
 
 logger = logging.getLogger(__name__)
 
+
 class BreakOutStrategy(Strategy):
     """Enters trades when price breaks out of a defined opening range."""
+
     def __init__(self, config: StrategyConfig):
         super().__init__(config=config)
         self.range_by_symbol: dict[str, Range] = {}
@@ -92,13 +94,13 @@ class BreakOutStrategy(Strategy):
     def is_entry_signal(self, asset: AssetConfig) -> Optional[str]:
         if self.state_manager.get_target_reached():
             return None
-       
+
         if self.state_manager.get_weekly_profit_reached():
             return None
-        
+
         if self.has_reached_max_trades(asset):
             return None
-        
+
         now_min = PlatformTime.minutes_since_midnight()
         if now_min < (asset.open_min or 0):
             return None
@@ -123,10 +125,10 @@ class BreakOutStrategy(Strategy):
     def is_exit_signal(self, trade: TradeRecord, asset_config: AssetConfig) -> bool:
         if self.state_manager.get_target_reached():
             return True
-       
+
         if self.state_manager.get_weekly_profit_reached():
             return True
-        
+
         if trade.strategy != self.strategy_name:
             return False
 

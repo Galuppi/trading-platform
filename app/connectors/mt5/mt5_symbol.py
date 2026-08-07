@@ -29,8 +29,10 @@ TIMEFRAME_MAP = {
 
 logger = logging.getLogger(__name__)
 
+
 class Mt5Symbol(Symbol):
     """MetaTrader 5 implementation of the Symbol interface."""
+
     def get_ask_price(self, symbol: str) -> float:
         tick = mt5.symbol_info_tick(symbol)
         if tick is None:
@@ -64,7 +66,7 @@ class Mt5Symbol(Symbol):
         if not info:
             raise ValueError(f"Symbol info not found for {symbol}")
         return info.volume_max
-  
+
     def get_volume_step(self, symbol: str) -> float:
         info = mt5.symbol_info(symbol)
         if not info:
@@ -94,7 +96,7 @@ class Mt5Symbol(Symbol):
         if not info:
             raise ValueError(f"Symbol info not found for {symbol}")
         return info.point
-    
+
     def get_currency_profit(self, symbol: str) -> str:
         info = mt5.symbol_info(symbol)
         if not info:
@@ -106,7 +108,7 @@ class Mt5Symbol(Symbol):
         if not info:
             raise ValueError(f"Symbol info not found for {symbol}")
         return info.trade_tick_value if info else 0.0
-    
+
     def get_high_low_range(
         self,
         symbol: str,
@@ -115,7 +117,10 @@ class Mt5Symbol(Symbol):
         timeframe: str = TIMEFRAME_M1,
     ) -> Range:
         now = PlatformTime.now()
-        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + PlatformTime.timedelta(minutes=start_minute)
+        start_time = (
+            now.replace(hour=0, minute=0, second=0, microsecond=0)
+            + PlatformTime.timedelta(minutes=start_minute)
+        )
         end_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + PlatformTime.timedelta(minutes=end_minute)
 
         if start_time >= end_time:
@@ -130,24 +135,24 @@ class Mt5Symbol(Symbol):
         lows = [bar['low'] for bar in rates]
 
         return Range(
-            symbol=symbol, 
-            high=max(highs), 
-            low=min(lows), 
+            symbol=symbol,
+            high=max(highs),
+            low=min(lows),
             date=PlatformTime.today()
-            )
+        )
 
     def _map_timeframe(self, tf: str) -> int:
         return TIMEFRAME_MAP.get(tf, mt5.TIMEFRAME_M1)
 
     def get_open_price(self, symbol: str) -> float:
-            """Return the open price from the most recent M1 bar (today's opening price in practice)."""
-            if not mt5.symbol_select(symbol, True):
-                logger.warning(f"Cannot select symbol: {symbol}")
-                return None
+        """Return the open price from the most recent M1 bar (today's opening price in practice)."""
+        if not mt5.symbol_select(symbol, True):
+            logger.warning(f"Cannot select symbol: {symbol}")
+            return None
 
-            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 1)
-            if rates is None or len(rates) == 0:
-                logger.warning(f"No M1 rates available for {symbol}")
-                return None
+        rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 1)
+        if rates is None or len(rates) == 0:
+            logger.warning(f"No M1 rates available for {symbol}")
+            return None
 
-            return float(rates[0]["open"])
+        return float(rates[0]["open"])

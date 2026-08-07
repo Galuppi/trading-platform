@@ -13,6 +13,7 @@ from app.common.models.model_connector import ConnectorConfig
 
 logger = logging.getLogger(__name__)
 
+
 def get_connector(name: str, config: ConnectorConfig, state_manager: StateManager = None) -> Connector:
     name = name.lower()
 

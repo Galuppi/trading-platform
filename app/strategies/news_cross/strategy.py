@@ -33,6 +33,7 @@ CONFIRMATION_CATEGORY = "quotes"  # category used to confirm news-cross directio
 class NewsCrossStrategy(Strategy):
     """SMA crossover strategy driven by news sentiment scoring, confirmed by
     quotes-side price direction."""
+
     def __init__(self, config: StrategyConfig) -> None:
         super().__init__(config=config)
         self.signals: Dict[str, Signal] = {}
@@ -264,4 +265,3 @@ class NewsCrossStrategy(Strategy):
             self.signals = {}
             self.quotes_signals = {}
             self.last_load = None
-            

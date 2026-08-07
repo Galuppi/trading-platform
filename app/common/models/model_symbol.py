@@ -28,6 +28,7 @@ class Range:
     date: datetime  # platform-local timestamp
     range_set: bool = False
 
+
 @dataclass
 class PriceRecord:
     """A single recorded price observation."""

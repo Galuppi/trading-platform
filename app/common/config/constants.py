@@ -38,6 +38,4 @@ POSITIONING_CAPITAL = "capital"
 
 # account info retry
 RETRY_COUNT = 3
-RETRY_DELAY_SECONDS = 1.0 
-
-
+RETRY_DELAY_SECONDS = 1.0

@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class RiskManager:
     """Manages account-level risk thresholds (take profit, stop loss, break-even)."""
+
     def __init__(self) -> None:
         self._risk: Optional[AccountRisk] = None
 
@@ -20,7 +21,8 @@ class RiskManager:
         try:
             self._risk = load_account_risk()
             logger.info(
-                "Account risk loaded: stop_loss=%s, take_profit=%s, break_even=%s, profit_level=%s, take_profit_week=%s",
+                "Account risk loaded: stop_loss=%s, take_profit=%s, break_even=%s, "
+                "profit_level=%s, take_profit_week=%s",
                 self._risk.stop_loss,
                 self._risk.take_profit,
                 self._risk.break_even,

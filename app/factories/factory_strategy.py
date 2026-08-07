@@ -149,7 +149,7 @@ def get_strategies(
                 vix_manager=vix_manager,
                 notify_manager=notify_manager,
             )
-            
+
             holidays = load_holiday_calendar(config.holiday_calendar)
             strategy.set_holidays(holidays)
 

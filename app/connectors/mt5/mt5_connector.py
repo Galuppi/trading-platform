@@ -9,8 +9,10 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 class Mt5Connector(Connector):
     """MetaTrader 5 implementation of the Connector interface."""
+
     def __init__(self, config: ConnectorConfig, state_manager: StateManager = None):
         if config.login is None or config.password is None:
             raise ValueError("MT5 requires 'login' and 'password' in ConnectorConfig.")
@@ -19,7 +21,7 @@ class Mt5Connector(Connector):
 
     def connect(self) -> bool:
         """Establish connection to MetaTrader 5 with specific account credentials."""
-        path= self.config.terminal_path
+        path = self.config.terminal_path
         login = int(self.config.login)
         password = self.config.password
         server = self.config.server
@@ -53,9 +55,9 @@ class Mt5Connector(Connector):
             f"   Server: {account_info.server}\n"
             f"   Terminal Path: {path}"
         )
-        
+
         return True
-        
+
     def connection_check(self) -> bool:
         """Checks if the MT5 connection is still valid."""
         terminal_info = mt5.terminal_info()

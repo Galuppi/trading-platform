@@ -5,7 +5,13 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 from app.common.services.platform_time import PlatformTime
-from app.common.config.constants import DATETIME_FORMAT, TRADE_STATUS_OPEN, TRADE_STATUS_CLOSED, TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL
+from app.common.config.constants import (
+    DATETIME_FORMAT,
+    TRADE_STATUS_OPEN,
+    TRADE_STATUS_CLOSED,
+    TRADE_DIRECTION_BUY,
+    TRADE_DIRECTION_SELL,
+)
 from app.common.models.model_trade import TradeRecord
 from app.common.models.model_account import AccountSnapshot
 from app.base.base_account import Account
@@ -18,6 +24,7 @@ TradeLike = Union[TradeRecord, Dict[str, Any]]
 
 class StateManager:
     """Persists and queries trade state, account snapshots, and daily risk status."""
+
     def __init__(self, state_path: Path, account: Account, persist_enabled: bool = True) -> None:
         self.state_path = state_path
         self.persist_enabled = persist_enabled
@@ -175,7 +182,14 @@ class StateManager:
         self._cache.pop("_last_event", None)
         self.save()
 
-    def save_account_snapshot(self, equity: float, balance: float, target_reached: bool, break_even_reached: bool, weekly_profit_reached: bool) -> None:
+    def save_account_snapshot(
+        self,
+        equity: float,
+        balance: float,
+        target_reached: bool,
+        break_even_reached: bool,
+        weekly_profit_reached: bool,
+    ) -> None:
         snapshot_data = self.state.get("_daily_profit")
 
         if not snapshot_data:
@@ -192,7 +206,7 @@ class StateManager:
             target_reached = bool(target_reached)
             break_even_reached = bool(break_even_reached)
             weekly_profit_reached = bool(weekly_profit_reached)
-            
+
         snapshot = AccountSnapshot(
             timestamp=PlatformTime.datetime_str(),
             equity=float(equity),
@@ -266,7 +280,7 @@ class StateManager:
         if snapshot_data and isinstance(snapshot_data, dict):
             return snapshot_data.get("begin_balance_week", 0.0)
         return 0.0
-    
+
     def get_daily_profit(self) -> float:
         snapshot_data = self.state.get("_daily_profit")
         if snapshot_data and isinstance(snapshot_data, dict):
@@ -274,25 +288,25 @@ class StateManager:
         return 0.0
 
     def get_target_reached(self) -> bool:
-        snapshot_data: Optional[dict] = self.state.get("_daily_profit")      
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")
         if snapshot_data is None:
-            return False     
+            return False
         return snapshot_data.get("target_reached", False)
 
     def get_weekly_profit_reached(self) -> bool:
-        snapshot_data: Optional[dict] = self.state.get("_daily_profit")      
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")
         if snapshot_data is None:
-            return False     
+            return False
         return snapshot_data.get("weekly_profit_reached", False)
-       
+
     def get_break_even_reached(self) -> bool:
-        snapshot_data: Optional[dict] = self.state.get("_daily_profit")      
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")
         if snapshot_data is None:
-            return False     
+            return False
         return snapshot_data.get("break_even_reached", False)
-    
+
     def get_account_snapshot(self) -> AccountSnapshot:
-        snapshot_data: Optional[dict] = self.state.get("_daily_profit")     
+        snapshot_data: Optional[dict] = self.state.get("_daily_profit")
         if snapshot_data is not None:
             begin_balance = round(snapshot_data["begin_balance"], 2)
             balance = round(snapshot_data["balance"], 2)
@@ -300,7 +314,7 @@ class StateManager:
             profit = round(snapshot_data["profit_floating"], 2)
             profit_total_week = round(snapshot_data["profit_total_week"], 2)
             target_reached = snapshot_data.get("target_reached", False)
-            break_even_reached = snapshot_data.get("break_even_reached", False) 
+            break_even_reached = snapshot_data.get("break_even_reached", False)
         else:
             begin_balance = round(self.account.get_balance(), 2)
             balance = round(self.account.get_balance(), 2)
@@ -308,7 +322,7 @@ class StateManager:
             profit = round(equity - balance, 2)
             target_reached = False
             break_even_reached = False
-        
+
         return AccountSnapshot(
             timestamp=PlatformTime.datetime_str(),
             begin_balance=begin_balance,
@@ -499,9 +513,8 @@ class StateManager:
             if symbol is not None:
                 if trade.symbol != symbol:
                     continue
-                    
+
             if trade.profit is not None:
                 total_profit += trade.profit
-                
+
         return round(total_profit, 2)
-    

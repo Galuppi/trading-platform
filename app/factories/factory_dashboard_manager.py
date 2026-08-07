@@ -6,6 +6,7 @@ from app.common.config.paths import DASHBOARD_PATH
 
 logger = logging.getLogger(__name__)
 
+
 def get_dashboard_manager(dashboard_path: str = str(DASHBOARD_PATH)) -> DashboardManager:
     logger.info(f"Initializing DashboardManager at: {dashboard_path}")
 

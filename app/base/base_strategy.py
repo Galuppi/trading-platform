@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 class Strategy(ABC):
     """Abstract base class defining the strategy lifecycle: signals, entries, exits, and management."""
+
     def __init__(self, config: StrategyConfig):
         """Initialize the strategy with configuration."""
         self.config: StrategyConfig = config
@@ -134,7 +135,7 @@ class Strategy(ABC):
         """Return True if a new trade is allowed under strategy and asset constraints."""
         if self.is_holiday() or not self.is_market_open():
             return False
-        
+
         direction = order.direction
         today = PlatformTime.now().date()
 
@@ -146,8 +147,8 @@ class Strategy(ABC):
         ]
 
         if asset.max_total_trades is not None:
-                if len(trades_today) >= asset.max_total_trades:
-                    return False
+            if len(trades_today) >= asset.max_total_trades:
+                return False
 
         if direction == TRADE_DIRECTION_BUY:
             if asset.max_buy_trades == 0:
@@ -198,8 +199,12 @@ class Strategy(ABC):
                 strategy_name=self.strategy_name
             )
             self.state_manager.add_trade(trade)
-            self.notify_manager.send_notification(f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. Strategy: {self.strategy_display_name}", "Open Trade")
-            logger.info(f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. Strategy: {self.strategy_display_name}")
+            message = (
+                f"New Trade Opened: {trade.type.capitalize()} {trade.symbol} at {trade.entry_price}. "
+                f"Strategy: {self.strategy_display_name}"
+            )
+            self.notify_manager.send_notification(message, "Open Trade")
+            logger.info(message)
 
     def set_range(self) -> None:
         """Optional hook to update internal strategy state per tick/cycle."""
@@ -219,8 +224,12 @@ class Strategy(ABC):
             trade.comment = "Closed by signal"
 
         self.state_manager.add_trade(trade)
-        self.notify_manager.send_notification(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}", "Close Trade")
-        logger.info(f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at {trade.exit_price} Comment: {trade.comment}")
+        message = (
+            f"Trade Closed: {trade.type.capitalize()} {trade.symbol} closed at "
+            f"{trade.exit_price} Comment: {trade.comment}"
+        )
+        self.notify_manager.send_notification(message, "Close Trade")
+        logger.info(message)
 
     def manage_entry(self, trade: TradeRecord) -> None:
         """Strategy-level trade management hook."""
@@ -231,7 +240,7 @@ class Strategy(ABC):
     def finalize(self) -> None:
         """Hook for cleanup or final adjustments before shutdown."""
         pass
-    
+
     def has_reached_max_trades(self, asset: AssetConfig) -> bool:
         """Return True if this strategy has reached its max trades for the asset today."""
         open_trades = self.state_manager.get_open_trades(
@@ -305,4 +314,3 @@ class Strategy(ABC):
     def is_exit_signal(self, trade: TradeRecord, asset_config: AssetConfig) -> bool:
         """Check if market conditions trigger an exit signal for a trade."""
         pass
-    

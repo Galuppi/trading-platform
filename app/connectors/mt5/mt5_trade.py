@@ -18,8 +18,10 @@ from app.common.services.calculator import Calculator
 
 logger = logging.getLogger(__name__)
 
+
 class Mt5Trade(Trade):
     """MetaTrader 5 implementation of the Trade interface."""
+
     def __init__(self, calculator: Calculator):
         self.calculator = calculator
         if self.calculator is None:
@@ -28,9 +30,9 @@ class Mt5Trade(Trade):
     def open_position(self, order: OrderRequest) -> OrderResult:
 
         logger.debug(
-        f"Placing order — Symbol: {order.symbol}, "
-        f"Lot Size: {order.lot_size}, Direction: {order.direction}, "
-        f"SL: {order.stop_loss}, TP: {order.take_profit}, Comment: {order.comment}"
+            f"Placing order — Symbol: {order.symbol}, "
+            f"Lot Size: {order.lot_size}, Direction: {order.direction}, "
+            f"SL: {order.stop_loss}, TP: {order.take_profit}, Comment: {order.comment}"
         )
 
         return self._send_request(
@@ -69,7 +71,7 @@ class Mt5Trade(Trade):
 
             executed_exit_price = getattr(result, "price", None)
             requested_exit_price = result.request.get("price", None)
-            trade.exit_price = executed_exit_price or requested_exit_price 
+            trade.exit_price = executed_exit_price or requested_exit_price
             trade.slippage_exit = result.slippage_exit
 
         return TradeResult(

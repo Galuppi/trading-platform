@@ -17,11 +17,12 @@ from app.common.config.constants import TRADE_DIRECTION_SELL, TRADE_DIRECTION_BU
 logger = logging.getLogger(__name__)
 
 ACT_ON_NEWS_RELEASES = False
-TRADE_CATEGORY = "quotes" 
+TRADE_CATEGORY = "quotes"
 
 
 class QuotesCrossStrategy(Strategy):
     """SMA crossover strategy driven by live quote/price data."""
+
     def __init__(self, config: StrategyConfig) -> None:
         super().__init__(config=config)
         self.signals: Dict[str, Signal] = {}

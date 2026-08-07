@@ -33,10 +33,10 @@ class MondayOpenSwingStrategy(Strategy):
 
         if self.state_manager.get_weekly_profit_reached():
             return None
-        
+
         if self.has_reached_max_trades(asset):
             return None
-         
+
         if not PlatformTime.is_matching_weekday(asset.open_day or 2):
             return None
 
@@ -52,12 +52,10 @@ class MondayOpenSwingStrategy(Strategy):
 
         if self.state_manager.get_weekly_profit_reached():
             return True
-        
+
         if trade.strategy != self.strategy_name:
             return False
 
         if not PlatformTime.is_matching_weekday(asset_config.close_day or 3):
             return False
         return PlatformTime.minutes_since_midnight() >= (asset_config.close_min or 0)
-
-  
